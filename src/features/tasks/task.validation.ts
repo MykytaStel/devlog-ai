@@ -9,7 +9,11 @@ export const createTaskSchema = z.object({
   parentId: z.string().nullable().optional(),
 });
 
-export const updateTaskSchema = createTaskSchema.partial();
+export const updateTaskSchema = createTaskSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required",
+  });
 
 export const taskQuerySchema = z.object({
   status: z.enum([...TASK_STATUSES, "all"] as const).default("all"),

@@ -53,33 +53,39 @@ SQLite was chosen because the assignment describes one user and one team, with l
 
 ## Limitations:
 
-no authentication
-no multi-user sync
-no production deployment
-no distributed database
+- no authentication
+- no multi-user sync
+- no production deployment
+- no distributed database
+
 Planned AI Agents
 Prioritization Agent
 
 Analyzes current tasks and recommends what to start with based on:
 
-priority
-age
-status
-task context
-Decomposition Agent
+- priority
+- age
+- status
+- task context
+- Decomposition Agent
 
 Analyzes a task and either:
 
-asks a clarification question if the task is vague
-generates structured subtasks if the task is clear enough
-Scope
+- asks a clarification question if the task is vague
+- generates structured subtasks if the task is clear enough
 
 ## Implemented:
 
-local persistence
-task model
-repository layer
-validation foundation
+- local persistence
+- task model
+- repository layer
+- validation foundation
+- Task CRUD API
+- SQLite persistence
+- Server-side filtering by task status
+- Server-side sorting by creation date or priority
+- Zod validation for task input
+- Repository layer for database access
 
 ## Planned:
 
@@ -87,3 +93,17 @@ CRUD API
 task UI
 AI prioritization
 AI decomposition
+
+## API
+
+### Tasks
+
+```http
+GET /api/tasks
+GET /api/tasks?status=todo
+GET /api/tasks?sort=priority
+POST /api/tasks
+GET /api/tasks/:id
+PATCH /api/tasks/:id
+DELETE /api/tasks/:id
+```

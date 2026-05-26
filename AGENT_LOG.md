@@ -90,3 +90,28 @@ Manual decision:
 - I kept SQLite because it matches the local-first scope of the assignment.
 - I avoided switching to Postgres because that would add unnecessary setup friction for reviewers.
 - The app remains runnable locally with `npm install && npm run dev`.
+
+## Slice 3 — Task CRUD UI
+
+I used the agent to scaffold the first version of the UI because the assignment explicitly expects the frontend to be scaffolded with help from a coding agent.
+
+Implemented:
+
+- task list
+- task creation form
+- task editing flow
+- task deletion flow
+- quick status update
+- status filter
+- sorting by creation date or priority
+- loading state
+- empty state
+- basic error state
+- AI placeholder panel for upcoming agent features
+
+Manual decisions:
+
+- I kept the UI as a single-page local dashboard because the assignment does not require authentication or multiple workspaces.
+- I added a right-side panel for the task form and future AI actions to keep the workflow compact.
+- I kept the AI panel visible but inactive in this slice to show where the prioritization and decomposition agents will be integrated next.
+- I avoided drag-and-drop because it is not required and would increase scope.

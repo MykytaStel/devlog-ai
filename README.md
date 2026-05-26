@@ -40,6 +40,7 @@ OPENAI_MODEL="gpt-4o-mini"
 
 The app is intentionally small but structured:
 
+```
 src/app              Next.js pages and API routes
 src/components       UI components
 src/features         domain types and validation
@@ -48,6 +49,7 @@ src/server/repositories data access layer
 src/server/agents    AI agent orchestration
 src/server/ai        AI provider abstraction
 Storage Decision
+```
 
 SQLite was chosen because the assignment describes one user and one team, with local execution only.
 
@@ -58,18 +60,17 @@ SQLite was chosen because the assignment describes one user and one team, with l
 - no production deployment
 - no distributed database
 
-Planned AI Agents
-Prioritization Agent
+## Planned AI Agents
+- Prioritization Agent
+	Analyzes current tasks and recommends what to start with based on:
 
-Analyzes current tasks and recommends what to start with based on:
+		- priority
+		- age
+		- status
+		- task context
+		- Decomposition Agent
 
-- priority
-- age
-- status
-- task context
-- Decomposition Agent
-
-Analyzes a task and either:
+  Analyzes a task and either:
 
 - asks a clarification question if the task is vague
 - generates structured subtasks if the task is clear enough
@@ -86,13 +87,20 @@ Analyzes a task and either:
 - Server-side sorting by creation date or priority
 - Zod validation for task input
 - Repository layer for database access
+- Task CRUD UI
+- Task creation and editing form
+- Task deletion from UI
+- Quick status updates
+- Status filtering
+- Priority/date sorting
+- Loading, empty, and error states
 
 ## Planned:
 
-CRUD API
-task UI
-AI prioritization
-AI decomposition
+- CRUD API
+- task UI
+- AI prioritization
+- AI decomposition
 
 ## API
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { ui } from "@/components/ui/styles";
 import {
   createTask,
   deleteTask,
@@ -146,13 +147,13 @@ export function TaskWorkspace() {
       <nav className="grid grid-cols-2 gap-3 lg:hidden">
         <a
           href="#task-form"
-          className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100"
+          className={ui.mobilePrimaryNav}
         >
           New task
         </a>
         <a
           href="#ai-panel"
-          className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm font-semibold text-slate-200"
+          className={ui.mobileSecondaryNav}
         >
           AI panel
         </a>
@@ -179,7 +180,7 @@ export function TaskWorkspace() {
         />
 
         {errorMessage ? (
-          <div className="rounded-lg border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className={ui.alertError}>
             {errorMessage}
           </div>
         ) : null}

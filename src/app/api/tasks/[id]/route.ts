@@ -13,6 +13,7 @@ import {
   ok,
   routeError,
 } from "@/server/http/api-response";
+import { readJsonBody } from "@/server/http/read-json";
 import { requireSameOrigin } from "@/server/http/request-guard";
 
 type RouteContext = {
@@ -24,14 +25,6 @@ type RouteContext = {
 async function getTaskId(context: RouteContext) {
   const params = await context.params;
   return params.id;
-}
-
-async function readJson(request: NextRequest) {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
 }
 
 export async function GET(_request: NextRequest, context: RouteContext) {
@@ -67,7 +60,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return notFound("Task not found");
     }
 
-    const body = await readJson(request);
+    const body = await readJsonBody(request);
 
     if (!body) {
       return badRequest("Invalid JSON body");

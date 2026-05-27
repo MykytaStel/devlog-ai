@@ -1,6 +1,10 @@
+import {
+  jsonRequestInit,
+  parseJsonResponse,
+} from "@/features/http/api-client";
+import type { TaskWithSubtasksDto } from "@/features/tasks/task.types";
 import type { DecompositionResult, SubtaskDraft } from "./decomposition.types";
 import type { PrioritizationResult } from "./prioritization.types";
-import type { TaskWithSubtasksDto } from "@/features/tasks/task.types";
 
 type PrioritizationResponse = {
   data: PrioritizationResult;
@@ -14,27 +18,15 @@ type CreateSubtasksResponse = {
   data: TaskWithSubtasksDto;
 };
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message =
-      data && typeof data === "object" && "error" in data
-        ? String(data.error)
-        : "AI request failed";
-
-    throw new Error(message);
-  }
-
-  return data as T;
-}
-
 export async function runPrioritization(): Promise<PrioritizationResult> {
   const response = await fetch("/api/ai/prioritize", {
     method: "POST",
   });
 
-  const result = await parseJsonResponse<PrioritizationResponse>(response);
+  const result = await parseJsonResponse<PrioritizationResponse>(
+    response,
+    "AI request failed"
+  );
 
   return result.data;
 }
@@ -44,13 +36,13 @@ export async function runDecomposition(
 ): Promise<DecompositionResult> {
   const response = await fetch("/api/ai/decompose", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ taskId }),
+    ...jsonRequestInit({ taskId }),
   });
 
-  const result = await parseJsonResponse<DecompositionResponse>(response);
+  const result = await parseJsonResponse<DecompositionResponse>(
+    response,
+    "AI request failed"
+  );
 
   return result.data;
 }
@@ -61,13 +53,13 @@ export async function createGeneratedSubtasks(
 ): Promise<TaskWithSubtasksDto> {
   const response = await fetch(`/api/tasks/${taskId}/subtasks`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ subtasks }),
+    ...jsonRequestInit({ subtasks }),
   });
 
-  const result = await parseJsonResponse<CreateSubtasksResponse>(response);
+  const result = await parseJsonResponse<CreateSubtasksResponse>(
+    response,
+    "AI request failed"
+  );
 
   return result.data;
 }

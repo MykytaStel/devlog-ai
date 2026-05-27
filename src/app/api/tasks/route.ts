@@ -6,15 +6,8 @@ import {
 } from "@/features/tasks/task.validation";
 import { createTask, getTasks } from "@/server/repositories/task.repository";
 import { badRequest, created, ok, routeError } from "@/server/http/api-response";
+import { readJsonBody } from "@/server/http/read-json";
 import { requireSameOrigin } from "@/server/http/request-guard";
-
-async function readJson(request: NextRequest) {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,7 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await readJson(request);
+    const body = await readJsonBody(request);
 
     if (!body) {
       return badRequest("Invalid JSON body");

@@ -2,12 +2,15 @@
 
 import { useMemo, useState } from "react";
 
-import type {
-  TaskDto,
-  TaskPriority,
-  TaskStatus,
-} from "@/features/tasks/task.types";
+import { ui } from "@/components/ui/styles";
 import type { TaskMutationInput } from "@/features/tasks/task.api";
+import {
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+  type TaskDto,
+  type TaskPriority,
+  type TaskStatus,
+} from "@/features/tasks/task.types";
 
 type TaskFormProps = {
   editingTask: TaskDto | null;
@@ -89,11 +92,7 @@ function TaskFormFields({
   }
 
   return (
-    <form
-      id="task-form"
-      onSubmit={handleSubmit}
-      className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/20"
-    >
+    <form id="task-form" onSubmit={handleSubmit} className={ui.panel}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-white">
@@ -108,7 +107,7 @@ function TaskFormFields({
           <button
             type="button"
             onClick={onCancelEdit}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
+            className={ui.secondaryButton}
           >
             Cancel
           </button>
@@ -116,7 +115,7 @@ function TaskFormFields({
       </div>
 
       <div className="mt-5 space-y-4">
-        <label className="block text-sm font-medium text-slate-300">
+        <label className={ui.fieldLabel}>
           Title
           <input
             value={form.title}
@@ -127,11 +126,11 @@ function TaskFormFields({
               }))
             }
             placeholder="Example: Build task CRUD API"
-            className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
+            className={ui.input}
           />
         </label>
 
-        <label className="block text-sm font-medium text-slate-300">
+        <label className={ui.fieldLabel}>
           Description
           <textarea
             value={form.description}
@@ -143,12 +142,12 @@ function TaskFormFields({
             }
             placeholder="Describe the task, expected outcome, constraints, and context."
             rows={6}
-            className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
+            className={ui.textarea}
           />
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm font-medium text-slate-300">
+          <label className={ui.fieldLabel}>
             Status
             <select
               value={form.status}
@@ -158,15 +157,17 @@ function TaskFormFields({
                   status: event.target.value as TaskStatus,
                 }))
               }
-              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
+              className={ui.select}
             >
-              <option value="todo">Todo</option>
-              <option value="in-progress">In progress</option>
-              <option value="done">Done</option>
+              {TASK_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
 
-          <label className="block text-sm font-medium text-slate-300">
+          <label className={ui.fieldLabel}>
             Priority
             <select
               value={form.priority}
@@ -176,11 +177,13 @@ function TaskFormFields({
                   priority: event.target.value as TaskPriority,
                 }))
               }
-              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
+              className={ui.select}
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              {TASK_PRIORITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
         </div>
@@ -188,7 +191,7 @@ function TaskFormFields({
         <button
           type="submit"
           disabled={!canSubmit || isSubmitting}
-          className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className={ui.primaryButton}
         >
           {isSubmitting
             ? "Saving..."

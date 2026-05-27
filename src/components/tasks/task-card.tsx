@@ -1,9 +1,12 @@
 "use client";
 
-import type {
-  TaskDto,
-  TaskPriority,
-  TaskStatus,
+import { cx, ui } from "@/components/ui/styles";
+import {
+  TASK_PRIORITY_LABELS,
+  TASK_STATUS_LABELS,
+  TASK_STATUS_OPTIONS,
+  type TaskDto,
+  type TaskStatus,
 } from "@/features/tasks/task.types";
 
 type TaskCardProps = {
@@ -12,18 +15,6 @@ type TaskCardProps = {
   onDelete: (task: TaskDto) => void;
   onStatusChange: (task: TaskDto, status: TaskStatus) => void;
   onDecompose: (task: TaskDto) => void;
-};
-
-const priorityLabel: Record<TaskPriority, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
-};
-
-const statusLabel: Record<TaskStatus, string> = {
-  todo: "Todo",
-  "in-progress": "In progress",
-  done: "Done",
 };
 
 function formatDate(value: string) {
@@ -43,18 +34,18 @@ export function TaskCard({
   onDecompose,
 }: TaskCardProps) {
   return (
-    <article className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/15 transition hover:border-cyan-300/40">
+    <article className={ui.taskCard}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300">
-              {statusLabel[task.status]}
+            <span className={cx(ui.badge, "text-slate-300")}>
+              {TASK_STATUS_LABELS[task.status]}
             </span>
-            <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-cyan-200">
-              {priorityLabel[task.priority]} priority
+            <span className={cx(ui.badge, "text-cyan-200")}>
+              {TASK_PRIORITY_LABELS[task.priority]} priority
             </span>
             {task.parentId ? (
-              <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-violet-200">
+              <span className={cx(ui.badge, "text-violet-200")}>
                 Subtask
               </span>
             ) : null}
@@ -76,21 +67,21 @@ export function TaskCard({
           <button
             type="button"
             onClick={() => onDecompose(task)}
-            className="rounded-lg border border-cyan-300/20 px-3 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/10"
+            className={ui.accentButton}
           >
             Break down
           </button>
           <button
             type="button"
             onClick={() => onEdit(task)}
-            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
+            className={ui.secondaryButton}
           >
             Edit
           </button>
           <button
             type="button"
             onClick={() => onDelete(task)}
-            className="rounded-lg border border-red-400/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/10"
+            className={ui.dangerButton}
           >
             Delete
           </button>
@@ -98,18 +89,20 @@ export function TaskCard({
       </div>
 
       <div className="mt-5 border-t border-white/10 pt-4">
-        <label className="flex flex-col gap-2 text-sm text-slate-300 sm:max-w-xs">
+        <label className={cx(ui.fieldLabelSpaced, "sm:max-w-xs")}>
           Quick status update
           <select
             value={task.status}
             onChange={(event) =>
               onStatusChange(task, event.target.value as TaskStatus)
             }
-            className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+            className={ui.selectCompact}
           >
-            <option value="todo">Todo</option>
-            <option value="in-progress">In progress</option>
-            <option value="done">Done</option>
+            {TASK_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>

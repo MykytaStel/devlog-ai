@@ -1,3 +1,7 @@
+import {
+  jsonRequestInit,
+  parseJsonResponse,
+} from "@/features/http/api-client";
 import type { TaskDto, TaskPriority, TaskSort, TaskStatus } from "./task.types";
 
 export type TaskListFilters = {
@@ -26,21 +30,6 @@ type TaskResponse = {
   data: TaskDto;
 };
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message =
-      data && typeof data === "object" && "error" in data
-        ? String(data.error)
-        : "Request failed";
-
-    throw new Error(message);
-  }
-
-  return data as T;
-}
-
 export async function fetchTasks(filters: TaskListFilters): Promise<TaskDto[]> {
   const params = new URLSearchParams({
     status: filters.status,
@@ -59,10 +48,7 @@ export async function fetchTasks(filters: TaskListFilters): Promise<TaskDto[]> {
 export async function createTask(input: TaskMutationInput): Promise<TaskDto> {
   const response = await fetch("/api/tasks", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
+    ...jsonRequestInit(input),
   });
 
   const result = await parseJsonResponse<TaskResponse>(response);
@@ -76,10 +62,7 @@ export async function updateTask(
 ): Promise<TaskDto> {
   const response = await fetch(`/api/tasks/${id}`, {
     method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
+    ...jsonRequestInit(input),
   });
 
   const result = await parseJsonResponse<TaskResponse>(response);
@@ -92,13 +75,5 @@ export async function deleteTask(id: string): Promise<void> {
     method: "DELETE",
   });
 
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    const message =
-      data && typeof data === "object" && "error" in data
-        ? String(data.error)
-        : "Failed to delete task";
-
-    throw new Error(message);
-  }
+  await parseJsonResponse<void>(response, "Failed to delete task");
 }

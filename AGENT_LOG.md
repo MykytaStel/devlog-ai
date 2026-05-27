@@ -141,3 +141,38 @@ Manual decisions:
 - Mock mode is the default to keep `npm install && npm run dev` friction-free.
 - OpenAI is isolated behind an interface.
 - Agent routes remain `501 Not Implemented` until the actual prioritization and decomposition slices are implemented.
+
+## Slice 5 — Prioritization Agent
+
+Implemented the first in-product AI agent required by the assignment.
+
+Feature:
+
+- `POST /api/ai/prioritize`
+- "Plan my day" action in the UI
+
+Agent workflow:
+
+1. Load all tasks from the repository.
+2. Calculate local task signals:
+   - priority
+   - status
+   - age
+   - description clarity
+3. Exclude completed work from the main recommendation set.
+4. Build a shortlist of actionable tasks.
+5. Send structured context to the AI provider.
+6. Validate the provider response with Zod.
+7. Return a human-readable day plan with reasoning and risks.
+
+Why this is agentic:
+
+This is not a single prompt directly attached to a button.
+The agent first gathers context, evaluates task metadata, calculates local decision signals, builds a shortlist, and only then asks the provider to turn the context into a practical recommendation.
+
+Manual decisions:
+
+- I kept deterministic local scoring before the LLM call so the feature remains useful in mock mode.
+- I kept the mock provider as the default so reviewers can run the app without API keys.
+- I exposed agent steps in the UI to make the behavior explainable.
+- I filtered invalid task IDs from provider output to avoid showing hallucinated tasks.

@@ -94,6 +94,10 @@ SQLite was chosen because the assignment describes one user and one team, with l
 - Status filtering
 - Priority/date sorting
 - Loading, empty, and error states
+- AI prioritization agent
+- "Plan my day" UI action
+- Agent reasoning and risks
+- Agent steps exposed in UI
 
 ## Planned:
 
@@ -141,4 +145,28 @@ AI_PROVIDER="mock"
 AI_PROVIDER="openai"
 OPENAI_API_KEY="your-key"
 OPENAI_MODEL="gpt-4o-mini"
+```
+
+## AI Features
+
+### Prioritization Agent
+
+The prioritization agent helps the team decide what to start with.
+
+It considers:
+
+- task priority
+- task status
+- task age
+- description clarity
+
+Flow:
+
+```text
+load tasks
+→ calculate local signals
+→ build shortlist
+→ call AI provider
+→ validate structured result
+→ show plan in UI
 ```

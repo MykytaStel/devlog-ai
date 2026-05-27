@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
-import { ZodError } from "zod";
 
 import {
   createTaskSchema,
   taskQuerySchema,
 } from "@/features/tasks/task.validation";
 import { createTask, getTasks } from "@/server/repositories/task.repository";
-import { badRequest, created, ok, serverError, zodError } from "@/server/http/api-response";
+import { badRequest, created, ok, routeError } from "@/server/http/api-response";
+import { requireSameOrigin } from "@/server/http/request-guard";
 
 async function readJson(request: NextRequest) {
   try {
@@ -34,15 +34,17 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return zodError(error);
-    }
-
-    return serverError(error);
+    return routeError(error);
   }
 }
 
 export async function POST(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+
+  if (originError) {
+    return originError;
+  }
+
   try {
     const body = await readJson(request);
 
@@ -57,10 +59,6 @@ export async function POST(request: NextRequest) {
       data: task,
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return zodError(error);
-    }
-
-    return serverError(error);
+    return routeError(error);
   }
 }

@@ -25,6 +25,8 @@ const statusScore: Record<TaskStatus, number> = {
   done: -100,
 };
 
+const AI_TASK_CONTEXT_LIMIT = 12;
+
 function getAgeDays(createdAt: string) {
   const created = new Date(createdAt).getTime();
 
@@ -194,22 +196,26 @@ function buildFallbackResult(signals: TaskSignal[]): PrioritizationResult {
 }
 
 function buildUserPrompt(signals: TaskSignal[]) {
-  const compactContext = signals.map((signal) => ({
-    id: signal.task.id,
-    title: signal.task.title,
-    description: signal.task.description,
-    status: signal.task.status,
-    priority: signal.task.priority,
-    createdAt: signal.task.createdAt,
-    ageDays: signal.ageDays,
-    computedScore: signal.score,
-    localSignals: signal.signals,
-  }));
+  const compactContext = [...signals]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, AI_TASK_CONTEXT_LIMIT)
+    .map((signal) => ({
+      id: signal.task.id,
+      title: signal.task.title,
+      description: signal.task.description,
+      status: signal.task.status,
+      priority: signal.task.priority,
+      createdAt: signal.task.createdAt,
+      ageDays: signal.ageDays,
+      computedScore: signal.score,
+      localSignals: signal.signals,
+    }));
 
   return [
     "You are helping an engineering team plan the next focused work block.",
     "",
     "Use the provided task context and local signals.",
+    `Only the top ${AI_TASK_CONTEXT_LIMIT} highest-signal tasks are included when the workspace is large.`,
     "Do not simply pick the first high-priority task.",
     "Consider priority, status, age, description clarity, and execution flow.",
     "Completed tasks should not be recommended unless there is no other context.",

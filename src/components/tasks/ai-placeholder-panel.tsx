@@ -92,8 +92,11 @@ export function AiPlaceholderPanel({
   }
 
   return (
-    <section className="rounded-3xl border border-cyan-300/20 bg-cyan-300/[0.06] p-5">
-      <p className="text-sm font-medium uppercase tracking-[0.25em] text-cyan-200">
+    <section
+      id="ai-panel"
+      className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.06] p-5"
+    >
+      <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-200">
         AI Agent Layer
       </p>
 
@@ -111,12 +114,12 @@ export function AiPlaceholderPanel({
           type="button"
           onClick={handlePlanDay}
           disabled={isPlanning}
-          className="w-full rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isPlanning ? "Planning..." : "Plan my day"}
         </button>
 
-        <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
           <p className="text-sm font-medium text-white">Selected task</p>
           {selectedTask ? (
             <div className="mt-2">
@@ -139,7 +142,7 @@ export function AiPlaceholderPanel({
             type="button"
             onClick={handleDecompose}
             disabled={!selectedTask || isDecomposing}
-            className="mt-4 w-full rounded-2xl border border-cyan-300/20 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 w-full rounded-lg border border-cyan-300/20 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDecomposing ? "Decomposing..." : "Decompose selected task"}
           </button>
@@ -147,14 +150,14 @@ export function AiPlaceholderPanel({
       </div>
 
       {errorMessage ? (
-        <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+        <div className="mt-4 rounded-lg border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
           {errorMessage}
         </div>
       ) : null}
 
       {prioritizationResult ? (
         <div className="mt-5 space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+          <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
             <p className="text-xs uppercase tracking-widest text-slate-500">
               Day plan
             </p>
@@ -169,10 +172,10 @@ export function AiPlaceholderPanel({
               {prioritizationResult.recommendedTasks.map((task) => (
                 <div
                   key={task.taskId}
-                  className="rounded-2xl border border-white/10 bg-slate-950/70 p-4"
+                  className="rounded-lg border border-white/10 bg-slate-950/70 p-4"
                 >
                   <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-300 text-sm font-bold text-slate-950">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-cyan-300 text-sm font-bold text-slate-950">
                       {task.rank}
                     </span>
                     <div>
@@ -190,7 +193,7 @@ export function AiPlaceholderPanel({
             </div>
           ) : null}
 
-          <details className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+          <details className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
             <summary className="cursor-pointer text-sm font-medium text-slate-300">
               Prioritization agent steps
             </summary>
@@ -206,7 +209,7 @@ export function AiPlaceholderPanel({
       {decompositionResult ? (
         <div className="mt-5 space-y-4">
           {decompositionResult.type === "clarification_needed" ? (
-            <div className="rounded-2xl border border-amber-300/20 bg-amber-300/10 p-4">
+            <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-4">
               <p className="text-sm font-medium text-amber-100">
                 Clarification needed
               </p>
@@ -221,7 +224,7 @@ export function AiPlaceholderPanel({
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
                 <p className="text-xs uppercase tracking-widest text-slate-500">
                   Decomposition
                 </p>
@@ -233,7 +236,7 @@ export function AiPlaceholderPanel({
               {decompositionResult.subtasks.map((subtask) => (
                 <div
                   key={`${subtask.title}-${subtask.priority}`}
-                  className="rounded-2xl border border-white/10 bg-slate-950/70 p-4"
+                  className="rounded-lg border border-white/10 bg-slate-950/70 p-4"
                 >
                   <p className="font-medium text-white">{subtask.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -250,14 +253,14 @@ export function AiPlaceholderPanel({
                 type="button"
                 onClick={handleCreateSubtasks}
                 disabled={isCreatingSubtasks}
-                className="w-full rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isCreatingSubtasks ? "Creating subtasks..." : "Create subtasks"}
               </button>
             </div>
           )}
 
-          <details className="rounded-2xl border border-white/10 bg-slate-950/70 p-4">
+          <details className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
             <summary className="cursor-pointer text-sm font-medium text-slate-300">
               Decomposition agent steps
             </summary>

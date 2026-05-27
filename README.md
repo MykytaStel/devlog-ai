@@ -1,172 +1,136 @@
 # DevLog
 
-DevLog is a local-first task tracker for engineering teams with an AI agent layer.
+DevLog is a local-first task tracker for engineering teams with an AI agent layer for day planning and task decomposition.
 
-The goal is to reduce friction around day planning, task decomposition, and async status updates.
+The product is intentionally scoped for the homework assignment: one user, one team, local execution, and no production deployment.
 
 ## Tech Stack
 
-- Next.js
-- TypeScript
-- Prisma
-- SQLite
-- Zod
+- Next.js App Router
+- React and TypeScript
+- Prisma with SQLite
+- Zod validation
 - Tailwind CSS
-- AI provider abstraction with mock mode
+- AI provider abstraction with mock and OpenAI modes
 
 ## Getting Started
 
+The default local configuration uses SQLite and the mock AI provider, so this works without API keys:
+
 ```bash
 npm install
-cp .env.example .env
-npx prisma migrate dev
 npm run dev
 ```
 
 Open:
 
-`http://localhost:3000`
+```text
+http://localhost:3000
+```
 
-Environment Variables
+Use `localhost`, not `127.0.0.1`, because the Next.js dev server HMR path is host-sensitive in this setup.
+
+Optional environment override:
 
 ```bash
+cp .env.example .env
+```
+
+```env
 DATABASE_URL="file:./dev.db"
 AI_PROVIDER="mock"
 OPENAI_API_KEY=""
 OPENAI_MODEL="gpt-4o-mini"
 ```
 
-## Architecture
-
-The app is intentionally small but structured:
-
-```
-src/app              Next.js pages and API routes
-src/components       UI components
-src/features         domain types and validation
-src/server/db        Prisma client
-src/server/repositories data access layer
-src/server/agents    AI agent orchestration
-src/server/ai        AI provider abstraction
-Storage Decision
-```
-
-SQLite was chosen because the assignment describes one user and one team, with local execution only.
-
-## Limitations:
-
-- no authentication
-- no multi-user sync
-- no production deployment
-- no distributed database
-
-## Planned AI Agents
-- Prioritization Agent
-	Analyzes current tasks and recommends what to start with based on:
-
-		- priority
-		- age
-		- status
-		- task context
-		- Decomposition Agent
-
-  Analyzes a task and either:
-
-- asks a clarification question if the task is vague
-- generates structured subtasks if the task is clear enough
-
-## Implemented:
-
-- local persistence
-- task model
-- repository layer
-- validation foundation
-- Task CRUD API
-- SQLite persistence
-- Server-side filtering by task status
-- Server-side sorting by creation date or priority
-- Zod validation for task input
-- Repository layer for database access
-- Task CRUD UI
-- Task creation and editing form
-- Task deletion from UI
-- Quick status updates
-- Status filtering
-- Priority/date sorting
-- Loading, empty, and error states
-- AI prioritization agent
-- "Plan my day" UI action
-- Agent reasoning and risks
-- Agent steps exposed in UI
-
-## Planned:
-
-- CRUD API
-- task UI
-- AI prioritization
-- AI decomposition
-
-## API
-
-### Tasks
-
-```http
-GET /api/tasks
-GET /api/tasks?status=todo
-GET /api/tasks?sort=priority
-POST /api/tasks
-GET /api/tasks/:id
-PATCH /api/tasks/:id
-DELETE /api/tasks/:id
-```
-
-## UI
-
-The app uses a one-page dashboard layout:
-
-- left/main area: task list, filters, sorting
-- right sidebar: create/edit form and AI assistant panel
-
-This keeps the workflow compact and matches the local MVP scope of the assignment.
-
-## AI Provider
-
-DevLog uses an AI provider abstraction.
-
-Supported providers:
-
-- `mock`
-- `openai`
-
-Default local mode:
+To test real AI responses:
 
 ```env
-AI_PROVIDER="mock"
 AI_PROVIDER="openai"
 OPENAI_API_KEY="your-key"
 OPENAI_MODEL="gpt-4o-mini"
 ```
 
-## AI Features
+## Architecture
+
+```text
+src/app                 Next.js pages and route handlers
+src/components          UI components
+src/features            domain types, client APIs, validation
+src/server/db           Prisma client
+src/server/repositories data access layer
+src/server/agents       AI agent orchestration
+src/server/ai           AI provider abstraction
+```
+
+SQLite was chosen because the assignment describes one local user and one team. The tradeoff is that this is not a distributed or multi-user storage design.
+
+## Implemented
+
+- Task CRUD with persisted SQLite storage
+- Status filtering and priority/date sorting
+- Client UI for creating, editing, deleting, and quick status updates
+- Zod validation for API input
+- Typed DTO boundary between Prisma and the app
+- AI prioritization agent with local scoring, provider call, structured validation, and explainable output
+- AI decomposition agent with a clarification branch, subtask preview, and explicit create-subtasks action
+- Mock AI mode for local review without real keys
+
+## AI Agent Behavior
 
 ### Prioritization Agent
 
-The prioritization agent helps the team decide what to start with.
+The prioritization agent:
 
-It considers:
+- loads current tasks
+- calculates local signals from priority, status, age, and description clarity
+- builds a capped high-signal context for the AI provider
+- validates structured output with Zod
+- filters hallucinated task IDs before showing recommendations
 
-- task priority
-- task status
-- task age
-- description clarity
+### Decomposition Agent
 
-Flow:
+The decomposition agent:
 
-```text
-load tasks
-→ calculate local signals
-→ build shortlist
-→ call AI provider
-→ validate structured result
-→ show plan in UI
+- loads a selected task
+- checks whether the title and description are clear enough
+- asks for clarification when context is weak
+- generates structured subtasks when context is sufficient
+- only writes subtasks after explicit user confirmation
+
+## API
+
+```http
+GET    /api/tasks
+GET    /api/tasks?status=todo
+GET    /api/tasks?sort=priority
+POST   /api/tasks
+GET    /api/tasks/:id
+PATCH  /api/tasks/:id
+DELETE /api/tasks/:id
+POST   /api/tasks/:id/subtasks
+GET    /api/ai/health
+POST   /api/ai/prioritize
+POST   /api/ai/decompose
+POST   /api/ai/status-update
 ```
+
+`/api/ai/status-update` is intentionally left as a `501` placeholder because the assignment requires at least two AI features and this version implements prioritization plus decomposition.
+
+## Security and Scope
+
+- Authentication is intentionally out of scope because the assignment specifies one user and one team.
+- Mutating and AI route handlers reject cross-site browser requests.
+- API errors avoid exposing internal exception details to the client.
+- Basic security headers are configured in `next.config.ts`.
+- Real secrets must stay in `.env`; `.env.example` contains placeholders only.
+
+For production, add authentication, authorization, rate limiting, request-size limits, audit logging, and a reverse proxy in front of `next start`.
+
+## Graceful Shutdown
+
+This project uses the standard Next.js App Router runtime and does not add custom signal handlers. When self-hosting with `next start`, send `SIGINT` or `SIGTERM` and allow a 10-30 second drain period so in-flight requests can finish. Custom cleanup should only be added if the app later introduces a custom production server or long-lived background workers.
+
+## Known Dependency Audit Status
+
+`npm audit --omit=dev` currently reports moderate advisories through upstream `next/postcss` and `prisma/@hono/node-server` dependency chains. The suggested `npm audit fix --force` path downgrades major packages, so it is not applied automatically. Re-check before submission and upgrade when compatible patched releases are available.

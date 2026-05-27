@@ -47,8 +47,36 @@ export function TaskWorkspace() {
   }, [filters]);
 
   useEffect(() => {
-    void loadTasks();
-  }, [loadTasks]);
+    let isActive = true;
+
+    fetchTasks(filters)
+      .then((nextTasks) => {
+        if (!isActive) {
+          return;
+        }
+
+        setTasks(nextTasks);
+        setErrorMessage(null);
+      })
+      .catch((error) => {
+        if (!isActive) {
+          return;
+        }
+
+        setErrorMessage(
+          error instanceof Error ? error.message : "Failed to load tasks"
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [filters]);
 
   async function handleSubmit(input: TaskMutationInput) {
     setIsSubmitting(true);
@@ -115,26 +143,43 @@ export function TaskWorkspace() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <nav className="grid grid-cols-2 gap-3 lg:hidden">
+        <a
+          href="#task-form"
+          className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100"
+        >
+          New task
+        </a>
+        <a
+          href="#ai-panel"
+          className="rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3 text-center text-sm font-semibold text-slate-200"
+        >
+          AI panel
+        </a>
+      </nav>
+
       <section className="space-y-4">
         <TaskFilters
           status={filters.status}
           sort={filters.sort}
-          onStatusChange={(status) =>
+          onStatusChange={(status) => {
+            setIsLoading(true);
             setFilters((current) => ({
               ...current,
               status,
-            }))
-          }
-          onSortChange={(sort) =>
+            }));
+          }}
+          onSortChange={(sort) => {
+            setIsLoading(true);
             setFilters((current) => ({
               ...current,
               sort,
-            }))
-          }
+            }));
+          }}
         />
 
         {errorMessage ? (
-          <div className="rounded-2xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="rounded-lg border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
             {errorMessage}
           </div>
         ) : null}
@@ -149,7 +194,7 @@ export function TaskWorkspace() {
         />
       </section>
 
-      <aside className="space-y-4">
+      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
         <TaskForm
           editingTask={editingTask}
           isSubmitting={isSubmitting}

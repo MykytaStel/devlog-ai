@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
@@ -32,6 +33,15 @@ export function notFound(message = "Resource not found") {
   );
 }
 
+export function forbidden(message = "Forbidden") {
+  return NextResponse.json(
+    {
+      error: message,
+    },
+    { status: 403 }
+  );
+}
+
 export function serverError(error: unknown) {
   console.error(error);
 
@@ -51,4 +61,36 @@ export function zodError(error: ZodError) {
       message: issue.message,
     }))
   );
+}
+
+function prismaError(error: Prisma.PrismaClientKnownRequestError) {
+  if (error.code === "P2025") {
+    return notFound("Task not found");
+  }
+
+  if (error.code === "P2003" || error.code === "P2014") {
+    return badRequest("Related task does not exist");
+  }
+
+  return null;
+}
+
+export function routeError(error: unknown) {
+  if (error instanceof ZodError) {
+    return zodError(error);
+  }
+
+  if (error instanceof Error && error.message === "Task not found") {
+    return notFound("Task not found");
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    const response = prismaError(error);
+
+    if (response) {
+      return response;
+    }
+  }
+
+  return serverError(error);
 }

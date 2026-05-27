@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
 import { subtaskDraftSchema } from "@/features/ai/decomposition.types";
 import { TASK_PRIORITIES } from "@/features/tasks/task.types";
@@ -11,9 +11,9 @@ import {
   badRequest,
   created,
   notFound,
-  serverError,
-  zodError,
+  routeError,
 } from "@/server/http/api-response";
+import { requireSameOrigin } from "@/server/http/request-guard";
 
 export const runtime = "nodejs";
 
@@ -45,6 +45,12 @@ async function readJson(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+
+  if (originError) {
+    return originError;
+  }
+
   try {
     const id = await getTaskId(context);
     const existingTask = await getTaskById(id);
@@ -62,14 +68,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const input = createSubtasksSchema.parse(body);
     const task = await createSubtasks(id, input.subtasks);
 
+    if (!task) {
+      return notFound("Task not found");
+    }
+
     return created({
       data: task,
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return zodError(error);
-    }
-
-    return serverError(error);
+    return routeError(error);
   }
 }

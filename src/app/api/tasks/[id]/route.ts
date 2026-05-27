@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { ZodError } from "zod";
 
 import { updateTaskSchema } from "@/features/tasks/task.validation";
 import {
@@ -12,9 +11,9 @@ import {
   noContent,
   notFound,
   ok,
-  serverError,
-  zodError,
+  routeError,
 } from "@/server/http/api-response";
+import { requireSameOrigin } from "@/server/http/request-guard";
 
 type RouteContext = {
   params: Promise<{
@@ -48,11 +47,17 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       data: task,
     });
   } catch (error) {
-    return serverError(error);
+    return routeError(error);
   }
 }
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+
+  if (originError) {
+    return originError;
+  }
+
   try {
     const id = await getTaskId(context);
 
@@ -75,15 +80,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       data: task,
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return zodError(error);
-    }
-
-    return serverError(error);
+    return routeError(error);
   }
 }
 
-export async function DELETE(_request: NextRequest, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  const originError = requireSameOrigin(request);
+
+  if (originError) {
+    return originError;
+  }
+
   try {
     const id = await getTaskId(context);
 
@@ -97,6 +104,6 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 
     return noContent();
   } catch (error) {
-    return serverError(error);
+    return routeError(error);
   }
 }

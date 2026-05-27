@@ -147,7 +147,7 @@ Manual decisions:
 
 - Mock mode is the default to keep `npm install && npm run dev` friction-free.
 - OpenAI is isolated behind an interface.
-- Agent routes remain `501 Not Implemented` until the actual prioritization and decomposition slices are implemented.
+- Agent routes were temporary `501 Not Implemented` stubs until the actual prioritization and decomposition slices were implemented.
 
 ## Slice 5 — Prioritization Agent
 
@@ -241,3 +241,21 @@ Manual decisions:
 - I kept authentication out of scope because the assignment explicitly says it is not required.
 - I did not apply `npm audit fix --force` because it proposes breaking dependency changes.
 - I documented graceful shutdown instead of adding custom signal handlers, because this app uses the standard Next.js runtime.
+
+## Slice 8 — Final Submission Hardening
+
+I used Codex to compare the implementation against the homework brief one more time and then make the smallest high-impact fixes before submission.
+
+Implemented:
+
+- Fixed `PATCH` validation so partial updates no longer inherit create defaults and accidentally reset omitted fields.
+- Strengthened the OpenAI provider by using SDK-level Zod structured output parsing instead of loose JSON mode.
+- Mapped missing OpenAI keys to a client-facing `400` and provider/schema failures to `502`.
+- Removed the unfinished status-update endpoint from the public API instead of leaving a `501` route in the submission.
+- Improved the decomposition UI so creating subtasks leaves a visible success state and keeps the parent task context selected.
+- Added Vitest coverage for validation and the two agent decision paths.
+
+Manual decisions:
+
+- I did not add a third AI feature because the assignment asks for at least two, and two finished agents are stronger than two finished agents plus one placeholder.
+- I kept the existing `Task.parentId` subtask model because it is enough for the local MVP and avoids an unnecessary migration.

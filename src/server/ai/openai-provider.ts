@@ -1,6 +1,11 @@
 import OpenAI from "openai";
+import { zodResponseFormat } from "openai/helpers/zod";
 
-import { AiProviderError, type AiGenerateJsonInput, type AiProvider } from "./ai-provider";
+import {
+  AiProviderError,
+  type AiGenerateJsonInput,
+  type AiProvider,
+} from "./ai-provider";
 
 type OpenAiProviderOptions = {
   apiKey?: string;
@@ -36,21 +41,18 @@ export class OpenAiProvider implements AiProvider {
     }
 
     try {
-      const completion = await this.client.chat.completions.create({
+      const completion = await this.client.chat.completions.parse({
         model: this.model,
         temperature: 0.2,
-        response_format: {
-          type: "json_object",
-        },
+        response_format: zodResponseFormat(input.schema, input.schemaName),
         messages: [
           {
             role: "system",
             content: [
               input.system,
               "",
-              "Return only valid JSON.",
-              `The JSON object must match the expected schema: ${input.schemaName}.`,
-              "Do not wrap the JSON in markdown.",
+              "Return only the requested structured response.",
+              "Be concise and specific.",
             ].join("\\n"),
           },
           {
@@ -60,15 +62,13 @@ export class OpenAiProvider implements AiProvider {
         ],
       });
 
-      const content = completion.choices[0]?.message?.content;
+      const parsed = completion.choices[0]?.message.parsed;
 
-      if (!content) {
-        throw new AiProviderError("OpenAI returned an empty response");
+      if (!parsed) {
+        throw new AiProviderError("OpenAI returned an empty structured response");
       }
 
-      const parsedJson = JSON.parse(content);
-
-      return input.schema.parse(parsedJson);
+      return input.schema.parse(parsed);
     } catch (error) {
       if (error instanceof AiProviderError) {
         throw error;

@@ -1,5 +1,6 @@
 import type { DecompositionResult, SubtaskDraft } from "./decomposition.types";
 import type { PrioritizationResult } from "./prioritization.types";
+import type { TaskWithSubtasksDto } from "@/features/tasks/task.types";
 
 type PrioritizationResponse = {
   data: PrioritizationResult;
@@ -7,6 +8,10 @@ type PrioritizationResponse = {
 
 type DecompositionResponse = {
   data: DecompositionResult;
+};
+
+type CreateSubtasksResponse = {
+  data: TaskWithSubtasksDto;
 };
 
 async function parseJsonResponse<T>(response: Response): Promise<T> {
@@ -53,7 +58,7 @@ export async function runDecomposition(
 export async function createGeneratedSubtasks(
   taskId: string,
   subtasks: SubtaskDraft[]
-): Promise<void> {
+): Promise<TaskWithSubtasksDto> {
   const response = await fetch(`/api/tasks/${taskId}/subtasks`, {
     method: "POST",
     headers: {
@@ -62,5 +67,7 @@ export async function createGeneratedSubtasks(
     body: JSON.stringify({ subtasks }),
   });
 
-  await parseJsonResponse(response);
+  const result = await parseJsonResponse<CreateSubtasksResponse>(response);
+
+  return result.data;
 }

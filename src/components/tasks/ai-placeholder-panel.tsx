@@ -17,6 +17,12 @@ type AiPlaceholderPanelProps = {
   onSubtasksCreated: () => Promise<void>;
 };
 
+type CreatedSubtasksSummary = {
+  parentTitle: string;
+  createdCount: number;
+  totalSubtasks: number;
+};
+
 export function AiPlaceholderPanel({
   selectedTask,
   onClearSelectedTask,
@@ -30,6 +36,8 @@ export function AiPlaceholderPanel({
   const [isDecomposing, setIsDecomposing] = useState(false);
   const [isCreatingSubtasks, setIsCreatingSubtasks] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [createdSubtasksSummary, setCreatedSubtasksSummary] =
+    useState<CreatedSubtasksSummary | null>(null);
 
   async function handlePlanDay() {
     setIsPlanning(true);
@@ -56,6 +64,7 @@ export function AiPlaceholderPanel({
     setIsDecomposing(true);
     setErrorMessage(null);
     setDecompositionResult(null);
+    setCreatedSubtasksSummary(null);
 
     try {
       const nextResult = await runDecomposition(selectedTask.id);
@@ -78,10 +87,19 @@ export function AiPlaceholderPanel({
     setErrorMessage(null);
 
     try {
-      await createGeneratedSubtasks(selectedTask.id, decompositionResult.subtasks);
+      const createdCount = decompositionResult.subtasks.length;
+      const updatedTask = await createGeneratedSubtasks(
+        selectedTask.id,
+        decompositionResult.subtasks
+      );
+
       await onSubtasksCreated();
+      setCreatedSubtasksSummary({
+        parentTitle: updatedTask.title,
+        createdCount,
+        totalSubtasks: updatedTask.subtasks.length,
+      });
       setDecompositionResult(null);
-      onClearSelectedTask();
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Failed to create subtasks"
@@ -89,6 +107,13 @@ export function AiPlaceholderPanel({
     } finally {
       setIsCreatingSubtasks(false);
     }
+  }
+
+  function handleClearSelection() {
+    setDecompositionResult(null);
+    setCreatedSubtasksSummary(null);
+    setErrorMessage(null);
+    onClearSelectedTask();
   }
 
   return (
@@ -126,7 +151,7 @@ export function AiPlaceholderPanel({
               <p className="text-sm text-cyan-100">{selectedTask.title}</p>
               <button
                 type="button"
-                onClick={onClearSelectedTask}
+                onClick={handleClearSelection}
                 className="mt-2 text-xs text-slate-400 underline-offset-4 hover:text-white hover:underline"
               >
                 Clear selection
@@ -152,6 +177,20 @@ export function AiPlaceholderPanel({
       {errorMessage ? (
         <div className="mt-4 rounded-lg border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
           {errorMessage}
+        </div>
+      ) : null}
+
+      {createdSubtasksSummary ? (
+        <div className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
+          <p className="text-sm font-medium text-emerald-100">
+            Subtasks created
+          </p>
+          <p className="mt-2 text-sm leading-6 text-emerald-50">
+            Created {createdSubtasksSummary.createdCount} subtasks for &quot;
+            {createdSubtasksSummary.parentTitle}&quot;. The parent task now has{" "}
+            {createdSubtasksSummary.totalSubtasks} subtasks, and they are
+            visible in the task list with the Subtask label.
+          </p>
         </div>
       ) : null}
 

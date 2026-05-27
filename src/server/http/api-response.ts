@@ -2,6 +2,8 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
+import { AiProviderError } from "@/server/ai/ai-provider";
+
 export function ok<T>(data: T, status = 200) {
   return NextResponse.json(data, { status });
 }
@@ -42,6 +44,16 @@ export function forbidden(message = "Forbidden") {
   );
 }
 
+export function badGateway(message = "Bad gateway", details?: unknown) {
+  return NextResponse.json(
+    {
+      error: message,
+      details,
+    },
+    { status: 502 }
+  );
+}
+
 export function serverError(error: unknown) {
   console.error(error);
 
@@ -75,9 +87,26 @@ function prismaError(error: Prisma.PrismaClientKnownRequestError) {
   return null;
 }
 
+function aiProviderError(error: AiProviderError) {
+  console.error(error);
+
+  if (error.message.includes("OPENAI_API_KEY")) {
+    return badRequest(error.message);
+  }
+
+  return badGateway(
+    "AI provider request failed",
+    process.env.NODE_ENV === "development" ? error.message : undefined
+  );
+}
+
 export function routeError(error: unknown) {
   if (error instanceof ZodError) {
     return zodError(error);
+  }
+
+  if (error instanceof AiProviderError) {
+    return aiProviderError(error);
   }
 
   if (error instanceof Error && error.message === "Task not found") {

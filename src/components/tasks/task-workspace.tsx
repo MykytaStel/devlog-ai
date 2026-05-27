@@ -203,6 +203,7 @@ export function TaskWorkspace() {
         />
 
         <AiPlaceholderPanel
+          key={selectedTaskForAi?.id ?? "no-task-selected"}
           selectedTask={selectedTaskForAi}
           onClearSelectedTask={() => setSelectedTaskForAi(null)}
           onSubtasksCreated={loadTasks}

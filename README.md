@@ -76,6 +76,8 @@ SQLite was chosen because the assignment describes one local user and one team. 
 - AI decomposition agent with a clarification branch, subtask preview, and explicit create-subtasks action
 - Mock AI mode for local review without real keys
 
+Status-update generation was considered but intentionally kept out of the public API. This version focuses on two complete AI agents instead of shipping a third unfinished workflow.
+
 ## AI Agent Behavior
 
 ### Prioritization Agent
@@ -112,10 +114,17 @@ POST   /api/tasks/:id/subtasks
 GET    /api/ai/health
 POST   /api/ai/prioritize
 POST   /api/ai/decompose
-POST   /api/ai/status-update
 ```
 
-`/api/ai/status-update` is intentionally left as a `501` placeholder because the assignment requires at least two AI features and this version implements prioritization plus decomposition.
+## Tests
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+The automated tests cover task validation defaults, partial task updates, and the key decision branches in both AI agents.
 
 ## Security and Scope
 

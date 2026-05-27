@@ -9,6 +9,7 @@ type TaskListProps = {
   onEdit: (task: TaskDto) => void;
   onDelete: (task: TaskDto) => void;
   onStatusChange: (task: TaskDto, status: TaskStatus) => void;
+  onDecompose: (task: TaskDto) => void;
 };
 
 export function TaskList({
@@ -17,6 +18,7 @@ export function TaskList({
   onEdit,
   onDelete,
   onStatusChange,
+  onDecompose,
 }: TaskListProps) {
   if (isLoading) {
     return (
@@ -51,6 +53,7 @@ export function TaskList({
           onEdit={onEdit}
           onDelete={onDelete}
           onStatusChange={onStatusChange}
+          onDecompose={onDecompose}
         />
       ))}
     </div>

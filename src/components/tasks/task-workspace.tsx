@@ -23,6 +23,9 @@ export function TaskWorkspace() {
     sort: "createdAt",
   });
   const [editingTask, setEditingTask] = useState<TaskDto | null>(null);
+  const [selectedTaskForAi, setSelectedTaskForAi] = useState<TaskDto | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -85,6 +88,10 @@ export function TaskWorkspace() {
         setEditingTask(null);
       }
 
+      if (selectedTaskForAi?.id === task.id) {
+        setSelectedTaskForAi(null);
+      }
+
       await loadTasks();
     } catch (error) {
       setErrorMessage(
@@ -138,6 +145,7 @@ export function TaskWorkspace() {
           onEdit={setEditingTask}
           onDelete={handleDelete}
           onStatusChange={handleStatusChange}
+          onDecompose={setSelectedTaskForAi}
         />
       </section>
 
@@ -149,7 +157,11 @@ export function TaskWorkspace() {
           onCancelEdit={() => setEditingTask(null)}
         />
 
-        <AiPlaceholderPanel />
+        <AiPlaceholderPanel
+          selectedTask={selectedTaskForAi}
+          onClearSelectedTask={() => setSelectedTaskForAi(null)}
+          onSubtasksCreated={loadTasks}
+        />
       </aside>
     </div>
   );

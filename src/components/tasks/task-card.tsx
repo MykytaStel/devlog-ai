@@ -11,6 +11,7 @@ type TaskCardProps = {
   onEdit: (task: TaskDto) => void;
   onDelete: (task: TaskDto) => void;
   onStatusChange: (task: TaskDto, status: TaskStatus) => void;
+  onDecompose: (task: TaskDto) => void;
 };
 
 const priorityLabel: Record<TaskPriority, string> = {
@@ -39,6 +40,7 @@ export function TaskCard({
   onEdit,
   onDelete,
   onStatusChange,
+  onDecompose,
 }: TaskCardProps) {
   return (
     <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/20 transition hover:border-cyan-300/40">
@@ -70,7 +72,14 @@ export function TaskCard({
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-row gap-2 sm:flex-col">
+        <div className="flex shrink-0 flex-row flex-wrap gap-2 sm:flex-col">
+          <button
+            type="button"
+            onClick={() => onDecompose(task)}
+            className="rounded-xl border border-cyan-300/20 px-3 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/10"
+          >
+            Break down
+          </button>
           <button
             type="button"
             onClick={() => onEdit(task)}

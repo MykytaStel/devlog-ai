@@ -43,18 +43,18 @@ export function TaskCard({
   onDecompose,
 }: TaskCardProps) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/20 transition hover:border-cyan-300/40">
+    <article className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-lg shadow-black/15 transition hover:border-cyan-300/40">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/10 bg-slate-950 px-3 py-1 text-xs font-medium text-slate-300">
+            <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300">
               {statusLabel[task.status]}
             </span>
-            <span className="rounded-full border border-white/10 bg-slate-950 px-3 py-1 text-xs font-medium text-cyan-200">
+            <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-cyan-200">
               {priorityLabel[task.priority]} priority
             </span>
             {task.parentId ? (
-              <span className="rounded-full border border-white/10 bg-slate-950 px-3 py-1 text-xs font-medium text-violet-200">
+              <span className="rounded-md border border-white/10 bg-slate-950 px-2.5 py-1 text-xs font-medium text-violet-200">
                 Subtask
               </span>
             ) : null}
@@ -76,21 +76,21 @@ export function TaskCard({
           <button
             type="button"
             onClick={() => onDecompose(task)}
-            className="rounded-xl border border-cyan-300/20 px-3 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/10"
+            className="rounded-lg border border-cyan-300/20 px-3 py-2 text-sm text-cyan-100 transition hover:bg-cyan-300/10"
           >
             Break down
           </button>
           <button
             type="button"
             onClick={() => onEdit(task)}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
+            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
           >
             Edit
           </button>
           <button
             type="button"
             onClick={() => onDelete(task)}
-            className="rounded-xl border border-red-400/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/10"
+            className="rounded-lg border border-red-400/20 px-3 py-2 text-sm text-red-200 transition hover:bg-red-500/10"
           >
             Delete
           </button>
@@ -105,7 +105,7 @@ export function TaskCard({
             onChange={(event) =>
               onStatusChange(task, event.target.value as TaskStatus)
             }
-            className="rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
+            className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-cyan-300"
           >
             <option value="todo">Todo</option>
             <option value="in-progress">In progress</option>

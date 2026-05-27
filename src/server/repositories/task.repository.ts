@@ -1,31 +1,54 @@
 import type { Task } from "@prisma/client";
 import { prisma } from "@/server/db/prisma";
+import {
+  isTaskPriority,
+  isTaskStatus,
+  type TaskDto,
+  type TaskPriority,
+  type TaskWithSubtasksDto,
+} from "@/features/tasks/task.types";
 import type {
   CreateTaskInput,
   TaskQueryInput,
   UpdateTaskInput,
 } from "@/features/tasks/task.validation";
 
-const priorityRank: Record<string, number> = {
+const priorityRank: Record<TaskPriority, number> = {
   high: 3,
   medium: 2,
   low: 1,
 };
 
-function mapTask(task: Task) {
+function parseTaskStatus(status: string) {
+  if (!isTaskStatus(status)) {
+    throw new Error(`Invalid task status stored in database: ${status}`);
+  }
+
+  return status;
+}
+
+function parseTaskPriority(priority: string) {
+  if (!isTaskPriority(priority)) {
+    throw new Error(`Invalid task priority stored in database: ${priority}`);
+  }
+
+  return priority;
+}
+
+function mapTask(task: Task): TaskDto {
   return {
     id: task.id,
     title: task.title,
     description: task.description,
-    status: task.status,
-    priority: task.priority,
+    status: parseTaskStatus(task.status),
+    priority: parseTaskPriority(task.priority),
     parentId: task.parentId,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
   };
 }
 
-export async function getTasks(query: TaskQueryInput) {
+export async function getTasks(query: TaskQueryInput): Promise<TaskDto[]> {
   const tasks = await prisma.task.findMany({
     where:
       query.status === "all"
@@ -52,7 +75,9 @@ export async function getTasks(query: TaskQueryInput) {
   return mapped;
 }
 
-export async function getTaskById(id: string) {
+export async function getTaskById(
+  id: string
+): Promise<TaskWithSubtasksDto | null> {
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
@@ -74,7 +99,7 @@ export async function getTaskById(id: string) {
   };
 }
 
-export async function createTask(input: CreateTaskInput) {
+export async function createTask(input: CreateTaskInput): Promise<TaskDto> {
   const task = await prisma.task.create({
     data: {
       title: input.title,
@@ -88,7 +113,10 @@ export async function createTask(input: CreateTaskInput) {
   return mapTask(task);
 }
 
-export async function updateTask(id: string, input: UpdateTaskInput) {
+export async function updateTask(
+  id: string,
+  input: UpdateTaskInput
+): Promise<TaskDto> {
   const task = await prisma.task.update({
     where: { id },
     data: input,
@@ -110,7 +138,7 @@ export async function createSubtasks(
     description: string;
     priority: "low" | "medium" | "high";
   }>
-) {
+): Promise<TaskWithSubtasksDto | null> {
   await prisma.task.createMany({
     data: subtasks.map((subtask) => ({
       title: subtask.title,

@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { z, ZodError } from "zod";
+import { z } from "zod";
 
 import { runDecompositionAgent } from "@/server/agents/decomposition-agent";
-import { badRequest, ok, serverError, zodError } from "@/server/http/api-response";
+import { badRequest, ok, routeError } from "@/server/http/api-response";
+import { requireSameOrigin } from "@/server/http/request-guard";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,12 @@ async function readJson(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const originError = requireSameOrigin(request);
+
+  if (originError) {
+    return originError;
+  }
+
   try {
     const body = await readJson(request);
 
@@ -33,10 +40,6 @@ export async function POST(request: NextRequest) {
       data: result,
     });
   } catch (error) {
-    if (error instanceof ZodError) {
-      return zodError(error);
-    }
-
-    return serverError(error);
+    return routeError(error);
   }
 }

@@ -11,10 +11,17 @@ The important part is not only CRUD, but also showing how I use coding agents du
 
 ## Tools used
 
-- ChatGPT — planning, architecture discussion, code review, implementation guidance.
+- ChatGPT / Codex — planning, architecture discussion, code review, implementation guidance, and implementation support.
 - Manual development — final decisions, code integration, testing, and trade-off decisions.
 
-## Current implementation process
+## Where I intervened manually
+
+- I chose the local-first scope and kept authentication/deployment out of scope because the assignment describes one user and one team.
+- I reviewed and adjusted generated code when it conflicted with Next.js 16, Prisma 7, lint rules, or the assignment constraints.
+- I kept mocked AI as the default so reviewers can run the project without real API keys.
+- I tested the final app manually and with browser smoke tests instead of trusting generated code blindly.
+
+## Implementation process
 
 ### Slice 1 — Project foundation
 
@@ -42,7 +49,7 @@ Limitations:
 
 This is acceptable for the assignment scope and keeps the project easy to run locally.
 
-## Next slices
+## Planned sequence
 
 - Task CRUD API
 - Task UI
@@ -176,3 +183,61 @@ Manual decisions:
 - I kept the mock provider as the default so reviewers can run the app without API keys.
 - I exposed agent steps in the UI to make the behavior explainable.
 - I filtered invalid task IDs from provider output to avoid showing hallucinated tasks.
+
+## Slice 6 — Decomposition Agent
+
+Implemented the second required in-product AI agent.
+
+Feature:
+
+- `POST /api/ai/decompose`
+- "Break down" action on task cards
+- selected task context in the AI panel
+- subtask preview
+- "Create subtasks" action that saves generated subtasks into the app
+
+Agent workflow:
+
+1. Load the selected task from the repository.
+2. Check whether the task is clear enough.
+3. If the task is vague, return a clarification question.
+4. If the task is clear, build structured context for the AI provider.
+5. Generate a structured subtask plan.
+6. Validate the result with Zod.
+7. Show a preview in the UI.
+8. Create subtasks only after explicit user confirmation.
+
+Why this is agentic:
+
+The feature is not a direct one-shot LLM prompt.
+The agent makes a decision before generation: clarify or decompose.
+It also separates AI generation from database writes, so the user remains in control.
+
+Manual decisions:
+
+- I intentionally did not auto-create subtasks immediately after AI generation.
+- I added a clarification branch to avoid hallucinated subtasks for vague tasks.
+- I reused the existing Task model through `parentId` instead of adding a separate Subtask table.
+- I kept the mock provider compatible with this flow so the app works without real API keys.
+- I removed unused scaffolding where it distracted from the assignment scope.
+
+## Slice 7 — Audit and Submission Hardening
+
+I asked Codex to review the project against the assignment and then implement the highest-priority fixes.
+
+What changed:
+
+- Fixed build-blocking TypeScript issues by validating Prisma task fields at the repository boundary.
+- Fixed React lint issues without disabling the rule globally.
+- Added `.env.example` back into version control while keeping real `.env` files ignored.
+- Added route-level same-origin checks for mutating and AI endpoints.
+- Added basic security headers in Next.js config.
+- Added SQLite indexes for common task queries.
+- Tightened the README around setup, architecture, trade-offs, security, and graceful shutdown.
+- Reduced overly decorative UI styling and improved mobile access to create/AI actions.
+
+Manual decisions:
+
+- I kept authentication out of scope because the assignment explicitly says it is not required.
+- I did not apply `npm audit fix --force` because it proposes breaking dependency changes.
+- I documented graceful shutdown instead of adding custom signal handlers, because this app uses the standard Next.js runtime.

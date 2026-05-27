@@ -16,3 +16,15 @@ export type TaskDto = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type TaskWithSubtasksDto = TaskDto & {
+  subtasks: TaskDto[];
+};
+
+export function isTaskStatus(value: string): value is TaskStatus {
+  return TASK_STATUSES.includes(value as TaskStatus);
+}
+
+export function isTaskPriority(value: string): value is TaskPriority {
+  return TASK_PRIORITIES.includes(value as TaskPriority);
+}

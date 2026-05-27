@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type {
   TaskDto,
@@ -29,28 +29,46 @@ export function TaskForm({
   onSubmit,
   onCancelEdit,
 }: TaskFormProps) {
-  const [form, setForm] = useState<TaskMutationInput>(emptyForm);
+  return (
+    <TaskFormFields
+      key={editingTask?.id ?? "create-task"}
+      editingTask={editingTask}
+      isSubmitting={isSubmitting}
+      onSubmit={onSubmit}
+      onCancelEdit={onCancelEdit}
+    />
+  );
+}
+
+function getInitialForm(editingTask: TaskDto | null): TaskMutationInput {
+  if (!editingTask) {
+    return emptyForm;
+  }
+
+  return {
+    title: editingTask.title,
+    description: editingTask.description,
+    status: editingTask.status,
+    priority: editingTask.priority,
+    parentId: editingTask.parentId,
+  };
+}
+
+function TaskFormFields({
+  editingTask,
+  isSubmitting,
+  onSubmit,
+  onCancelEdit,
+}: TaskFormProps) {
+  const [form, setForm] = useState<TaskMutationInput>(() =>
+    getInitialForm(editingTask)
+  );
 
   const isEditing = Boolean(editingTask);
 
   const canSubmit = useMemo(() => {
     return form.title.trim().length > 0 && form.description.trim().length > 0;
   }, [form.description, form.title]);
-
-  useEffect(() => {
-    if (!editingTask) {
-      setForm(emptyForm);
-      return;
-    }
-
-    setForm({
-      title: editingTask.title,
-      description: editingTask.description,
-      status: editingTask.status,
-      priority: editingTask.priority,
-      parentId: editingTask.parentId,
-    });
-  }, [editingTask]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -72,8 +90,9 @@ export function TaskForm({
 
   return (
     <form
+      id="task-form"
       onSubmit={handleSubmit}
-      className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20"
+      className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/20"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -89,7 +108,7 @@ export function TaskForm({
           <button
             type="button"
             onClick={onCancelEdit}
-            className="rounded-xl border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
+            className="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 transition hover:bg-white/10"
           >
             Cancel
           </button>
@@ -108,7 +127,7 @@ export function TaskForm({
               }))
             }
             placeholder="Example: Build task CRUD API"
-            className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
+            className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
           />
         </label>
 
@@ -124,7 +143,7 @@ export function TaskForm({
             }
             placeholder="Describe the task, expected outcome, constraints, and context."
             rows={6}
-            className="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
+            className="mt-2 w-full resize-none rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-slate-600 focus:border-cyan-300"
           />
         </label>
 
@@ -139,7 +158,7 @@ export function TaskForm({
                   status: event.target.value as TaskStatus,
                 }))
               }
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
             >
               <option value="todo">Todo</option>
               <option value="in-progress">In progress</option>
@@ -157,7 +176,7 @@ export function TaskForm({
                   priority: event.target.value as TaskPriority,
                 }))
               }
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-white outline-none focus:border-cyan-300"
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -169,7 +188,7 @@ export function TaskForm({
         <button
           type="submit"
           disabled={!canSubmit || isSubmitting}
-          className="w-full rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting
             ? "Saving..."

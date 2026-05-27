@@ -115,3 +115,30 @@ GET /api/tasks/:id
 PATCH /api/tasks/:id
 DELETE /api/tasks/:id
 ```
+
+## UI
+
+The app uses a one-page dashboard layout:
+
+- left/main area: task list, filters, sorting
+- right sidebar: create/edit form and AI assistant panel
+
+This keeps the workflow compact and matches the local MVP scope of the assignment.
+
+## AI Provider
+
+DevLog uses an AI provider abstraction.
+
+Supported providers:
+
+- `mock`
+- `openai`
+
+Default local mode:
+
+```env
+AI_PROVIDER="mock"
+AI_PROVIDER="openai"
+OPENAI_API_KEY="your-key"
+OPENAI_MODEL="gpt-4o-mini"
+```

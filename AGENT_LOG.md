@@ -115,3 +115,29 @@ Manual decisions:
 - I added a right-side panel for the task form and future AI actions to keep the workflow compact.
 - I kept the AI panel visible but inactive in this slice to show where the prioritization and decomposition agents will be integrated next.
 - I avoided drag-and-drop because it is not required and would increase scope.
+
+## Slice 4 — AI Provider Layer
+
+Implemented the AI provider abstraction before building concrete agents.
+
+Implemented:
+
+- `AiProvider` interface
+- `MockAiProvider`
+- `OpenAiProvider`
+- provider resolver based on `AI_PROVIDER`
+- `/api/ai/health` endpoint
+- temporary AI route stubs with provider health info
+
+Why this matters:
+
+- The assignment allows mocked LLM calls if documented.
+- The app can run locally without real API keys.
+- Future agents do not depend directly on OpenAI SDK.
+- Reviewers can set `AI_PROVIDER=openai` and provide `OPENAI_API_KEY` to test real AI behavior.
+
+Manual decisions:
+
+- Mock mode is the default to keep `npm install && npm run dev` friction-free.
+- OpenAI is isolated behind an interface.
+- Agent routes remain `501 Not Implemented` until the actual prioritization and decomposition slices are implemented.

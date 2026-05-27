@@ -53,7 +53,7 @@ export class OpenAiProvider implements AiProvider {
               "",
               "Return only the requested structured response.",
               "Be concise and specific.",
-            ].join("\\n"),
+            ].join("\n"),
           },
           {
             role: "user",

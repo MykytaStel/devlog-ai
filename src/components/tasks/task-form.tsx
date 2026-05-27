@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { ui } from "@/components/ui/styles";
+import { cx, ui } from "@/components/ui/styles";
 import type { TaskMutationInput } from "@/features/tasks/task.api";
 import {
   TASK_PRIORITY_OPTIONS,
@@ -11,6 +11,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/features/tasks/task.types";
+import { TaskRefineButton } from "./task-refine-button";
 
 type TaskFormProps = {
   editingTask: TaskDto | null;
@@ -25,6 +26,19 @@ const emptyForm: TaskMutationInput = {
   status: "todo",
   priority: "medium",
 };
+
+function getInitialForm(editingTask: TaskDto | null): TaskMutationInput {
+  if (!editingTask) return emptyForm;
+  return {
+    title: editingTask.title,
+    description: editingTask.description,
+    status: editingTask.status,
+    priority: editingTask.priority,
+    parentId: editingTask.parentId,
+  };
+}
+
+// ─── Public wrapper (preserves key-based reset) ──────────────────────────────
 
 export function TaskForm({
   editingTask,
@@ -43,19 +57,7 @@ export function TaskForm({
   );
 }
 
-function getInitialForm(editingTask: TaskDto | null): TaskMutationInput {
-  if (!editingTask) {
-    return emptyForm;
-  }
-
-  return {
-    title: editingTask.title,
-    description: editingTask.description,
-    status: editingTask.status,
-    priority: editingTask.priority,
-    parentId: editingTask.parentId,
-  };
-}
+// ─── Internal form with state ─────────────────────────────────────────────────
 
 function TaskFormFields({
   editingTask,
@@ -63,32 +65,19 @@ function TaskFormFields({
   onSubmit,
   onCancelEdit,
 }: TaskFormProps) {
-  const [form, setForm] = useState<TaskMutationInput>(() =>
-    getInitialForm(editingTask)
-  );
-
+  const [form, setForm] = useState<TaskMutationInput>(() => getInitialForm(editingTask));
   const isEditing = Boolean(editingTask);
 
-  const canSubmit = useMemo(() => {
-    return form.title.trim().length > 0 && form.description.trim().length > 0;
-  }, [form.description, form.title]);
+  const canSubmit = useMemo(
+    () => form.title.trim().length > 0 && form.description.trim().length > 0,
+    [form.title, form.description]
+  );
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
-    if (!canSubmit || isSubmitting) {
-      return;
-    }
-
-    await onSubmit({
-      ...form,
-      title: form.title.trim(),
-      description: form.description.trim(),
-    });
-
-    if (!isEditing) {
-      setForm(emptyForm);
-    }
+    if (!canSubmit || isSubmitting) return;
+    await onSubmit({ ...form, title: form.title.trim(), description: form.description.trim() });
+    if (!isEditing) setForm(emptyForm);
   }
 
   return (
@@ -104,11 +93,7 @@ function TaskFormFields({
         </div>
 
         {isEditing ? (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className={ui.secondaryButton}
-          >
+          <button type="button" onClick={onCancelEdit} className={ui.secondaryButton}>
             Cancel
           </button>
         ) : null}
@@ -119,50 +104,42 @@ function TaskFormFields({
           Title
           <input
             value={form.title}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                title: event.target.value,
-              }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="Example: Build task CRUD API"
             className={ui.input}
           />
         </label>
 
-        <label className={ui.fieldLabel}>
-          Description
+        <div>
+          <div className="flex items-end justify-between">
+            <label className={ui.fieldLabel}>Description</label>
+            <TaskRefineButton
+              title={form.title}
+              description={form.description}
+              onRefined={(result) =>
+                setForm((f) => ({ ...f, title: result.title, description: result.description }))
+              }
+            />
+          </div>
           <textarea
             value={form.description}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                description: event.target.value,
-              }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             placeholder="Describe the task, expected outcome, constraints, and context."
             rows={6}
-            className={ui.textarea}
+            className={cx("mt-2", ui.textarea)}
           />
-        </label>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <label className={ui.fieldLabel}>
             Status
             <select
               value={form.status}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  status: event.target.value as TaskStatus,
-                }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as TaskStatus }))}
               className={ui.select}
             >
-              {TASK_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+              {TASK_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </label>
@@ -171,18 +148,11 @@ function TaskFormFields({
             Priority
             <select
               value={form.priority}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  priority: event.target.value as TaskPriority,
-                }))
-              }
+              onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as TaskPriority }))}
               className={ui.select}
             >
-              {TASK_PRIORITY_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+              {TASK_PRIORITY_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
           </label>
@@ -193,11 +163,7 @@ function TaskFormFields({
           disabled={!canSubmit || isSubmitting}
           className={ui.primaryButton}
         >
-          {isSubmitting
-            ? "Saving..."
-            : isEditing
-              ? "Save changes"
-              : "Create task"}
+          {isSubmitting ? "Saving..." : isEditing ? "Save changes" : "Create task"}
         </button>
       </div>
     </form>

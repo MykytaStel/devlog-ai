@@ -69,14 +69,14 @@ SQLite was chosen because the assignment describes one local user and one team. 
 
 - Task CRUD with persisted SQLite storage
 - Status filtering and priority/date sorting
-- Client UI for creating, editing, deleting, and quick status updates
+- Premium Glassmorphism UI for creating, editing, deleting, and quick status updates
 - Zod validation for API input
 - Typed DTO boundary between Prisma and the app
-- AI prioritization agent with local scoring, provider call, structured validation, and explainable output
-- AI decomposition agent with a clarification branch, subtask preview, and explicit create-subtasks action
+- **Prioritization Agent**: AI agent with local scoring, provider call, structured validation, and explainable output
+- **Decomposition Agent**: AI agent with a clarification branch, subtask preview, and explicit create-subtasks action
+- **Status Update Agent**: AI agent that analyzes current and completed tasks to write daily async Slack updates
+- **Task Refiner Agent**: "Own Idea" AI agent that rewrites vague task titles and descriptions into professional, structured tickets
 - Mock AI mode for local review without real keys
-
-Status-update generation was considered but intentionally kept out of the public API. This version focuses on two complete AI agents instead of shipping a third unfinished workflow.
 
 ## AI Agent Behavior
 

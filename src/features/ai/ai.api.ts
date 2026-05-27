@@ -63,3 +63,41 @@ export async function createGeneratedSubtasks(
 
   return result.data;
 }
+
+type StatusUpdateResponse = {
+  data: import("./status.types").StatusUpdateResult;
+};
+
+export async function runStatusUpdate(): Promise<import("./status.types").StatusUpdateResult> {
+  const response = await fetch("/api/ai/status", {
+    method: "POST",
+  });
+
+  const result = await parseJsonResponse<StatusUpdateResponse>(
+    response,
+    "AI request failed"
+  );
+
+  return result.data;
+}
+
+type RefineTaskResponse = {
+  data: import("./refine.types").RefineTaskResult;
+};
+
+export async function runRefineAgent(
+  title: string,
+  description: string
+): Promise<import("./refine.types").RefineTaskResult> {
+  const response = await fetch("/api/ai/refine", {
+    method: "POST",
+    ...jsonRequestInit({ title, description }),
+  });
+
+  const result = await parseJsonResponse<RefineTaskResponse>(
+    response,
+    "AI request failed"
+  );
+
+  return result.data;
+}

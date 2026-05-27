@@ -1,126 +1,37 @@
-import type { TaskDto, TaskPriority, TaskStatus } from "@/features/tasks/task.types";
+import type { TaskDto } from "@/features/tasks/task.types";
 import {
   prioritizationResultSchema,
   type PrioritizationResult,
 } from "@/features/ai/prioritization.types";
 import { getAiProvider } from "@/server/ai/get-ai-provider";
 import { getTasks } from "@/server/repositories/task.repository";
+import {
+  AI_TASK_CONTEXT_LIMIT,
+  scoreTask,
+  type TaskSignal,
+} from "./task-scoring";
 
-type TaskSignal = {
-  task: TaskDto;
-  ageDays: number;
-  score: number;
-  signals: string[];
-};
-
-const priorityScore: Record<TaskPriority, number> = {
-  high: 30,
-  medium: 15,
-  low: 5,
-};
-
-const statusScore: Record<TaskStatus, number> = {
-  "in-progress": 20,
-  todo: 10,
-  done: -100,
-};
-
-const AI_TASK_CONTEXT_LIMIT = 12;
-
-function getAgeDays(createdAt: string) {
-  const created = new Date(createdAt).getTime();
-
-  if (Number.isNaN(created)) {
-    return 0;
-  }
-
-  const diffMs = Date.now() - created;
-  const dayMs = 24 * 60 * 60 * 1000;
-
-  return Math.max(0, Math.floor(diffMs / dayMs));
-}
-
-function describePriority(priority: TaskPriority) {
-  if (priority === "high") {
-    return "high priority";
-  }
-
-  if (priority === "medium") {
-    return "medium priority";
-  }
-
-  return "low priority";
-}
-
-function describeStatus(status: TaskStatus) {
-  if (status === "in-progress") {
-    return "already in progress";
-  }
-
-  if (status === "todo") {
-    return "not started yet";
-  }
-
-  return "already done";
-}
-
-function scoreTask(task: TaskDto): TaskSignal {
-  const ageDays = getAgeDays(task.createdAt);
-  const ageScore = Math.min(20, ageDays * 2);
-  const clarityPenalty = task.description.trim().length < 40 ? -5 : 0;
-
-  const score =
-    priorityScore[task.priority] +
-    statusScore[task.status] +
-    ageScore +
-    clarityPenalty;
-
-  const signals = [
-    describePriority(task.priority),
-    describeStatus(task.status),
-    `${ageDays} day(s) old`,
-  ];
-
-  if (ageDays >= 7) {
-    signals.push("older task that may need attention");
-  }
-
-  if (task.description.trim().length < 40) {
-    signals.push("description may be too vague");
-  }
-
-  return {
-    task,
-    ageDays,
-    score,
-    signals,
-  };
-}
+// ─── Fallback (no AI provider call) ────────────────────────────────────────
 
 function buildFallbackResult(signals: TaskSignal[]): PrioritizationResult {
   const actionableSignals = signals
-    .filter((signal) => signal.task.status !== "done")
+    .filter((s) => s.task.status !== "done")
     .sort((a, b) => b.score - a.score);
 
-  const recommendedTasks = actionableSignals.slice(0, 3).map((signal, index) => ({
+  const recommendedTasks = actionableSignals.slice(0, 3).map((s, index) => ({
     rank: index + 1,
-    taskId: signal.task.id,
-    title: signal.task.title,
-    reason: [
-      `Score ${signal.score}.`,
-      `Signals: ${signal.signals.join(", ")}.`,
-    ].join(" "),
+    taskId: s.task.id,
+    title: s.task.title,
+    reason: [`Score ${s.score}.`, `Signals: ${s.signals.join(", ")}.`].join(" "),
     suggestedAction:
-      signal.task.status === "in-progress"
+      s.task.status === "in-progress"
         ? "Continue this task and push it closer to done."
         : "Start by clarifying the smallest next step and move it to in progress.",
   }));
 
-  const doneTasks = signals.filter((signal) => signal.task.status === "done").length;
-  const highPriorityTasks = signals.filter(
-    (signal) => signal.task.priority === "high"
-  ).length;
-  const staleTasks = signals.filter((signal) => signal.ageDays >= 7).length;
+  const doneTasks = signals.filter((s) => s.task.status === "done").length;
+  const highPriorityTasks = signals.filter((s) => s.task.priority === "high").length;
+  const staleTasks = signals.filter((s) => s.ageDays >= 7).length;
 
   if (signals.length === 0) {
     return {
@@ -189,26 +100,28 @@ function buildFallbackResult(signals: TaskSignal[]): PrioritizationResult {
       "Older tasks receive an age boost so they do not stay invisible forever.",
     ],
     risks: actionableSignals
-      .filter((signal) => signal.task.description.trim().length < 40)
+      .filter((s) => s.task.description.trim().length < 40)
       .slice(0, 2)
-      .map((signal) => `"${signal.task.title}" may need a clearer description before execution.`),
+      .map((s) => `"${s.task.title}" may need a clearer description before execution.`),
   };
 }
 
-function buildUserPrompt(signals: TaskSignal[]) {
+// ─── Prompt ─────────────────────────────────────────────────────────────────
+
+function buildUserPrompt(signals: TaskSignal[]): string {
   const compactContext = [...signals]
     .sort((a, b) => b.score - a.score)
     .slice(0, AI_TASK_CONTEXT_LIMIT)
-    .map((signal) => ({
-      id: signal.task.id,
-      title: signal.task.title,
-      description: signal.task.description,
-      status: signal.task.status,
-      priority: signal.task.priority,
-      createdAt: signal.task.createdAt,
-      ageDays: signal.ageDays,
-      computedScore: signal.score,
-      localSignals: signal.signals,
+    .map((s) => ({
+      id: s.task.id,
+      title: s.task.title,
+      description: s.task.description,
+      status: s.task.status,
+      priority: s.task.priority,
+      createdAt: s.task.createdAt,
+      ageDays: s.ageDays,
+      computedScore: s.score,
+      localSignals: s.signals,
     }));
 
   return [
@@ -225,6 +138,8 @@ function buildUserPrompt(signals: TaskSignal[]) {
   ].join("\n");
 }
 
+// ─── Provider result normalization ──────────────────────────────────────────
+
 function normalizeProviderResult(
   providerResult: PrioritizationResult,
   fallback: PrioritizationResult,
@@ -233,10 +148,7 @@ function normalizeProviderResult(
   const recommendedTasks = providerResult.recommendedTasks
     .filter((task) => knownTaskIds.has(task.taskId))
     .slice(0, 5)
-    .map((task, index) => ({
-      ...task,
-      rank: index + 1,
-    }));
+    .map((task, index) => ({ ...task, rank: index + 1 }));
 
   if (recommendedTasks.length === 0 && fallback.recommendedTasks.length > 0) {
     return fallback;
@@ -254,11 +166,10 @@ function normalizeProviderResult(
   };
 }
 
+// ─── Agent entry point ───────────────────────────────────────────────────────
+
 export async function runPrioritizationAgent(): Promise<PrioritizationResult> {
-  const tasks = await getTasks({
-    status: "all",
-    sort: "createdAt",
-  });
+  const tasks: TaskDto[] = await getTasks({ status: "all", sort: "createdAt" });
 
   const signals = tasks.map(scoreTask);
   const fallback = buildFallbackResult(signals);
@@ -268,7 +179,7 @@ export async function runPrioritizationAgent(): Promise<PrioritizationResult> {
   }
 
   const provider = getAiProvider();
-  const knownTaskIds = new Set(tasks.map((task) => task.id));
+  const knownTaskIds = new Set(tasks.map((t) => t.id));
 
   const result = await provider.generateJson({
     schemaName: "PrioritizationResult",

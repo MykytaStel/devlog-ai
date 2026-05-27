@@ -1,6 +1,12 @@
 "use client";
 
-import type { TaskSort, TaskStatus } from "@/features/tasks/task.types";
+import { cx, ui } from "@/components/ui/styles";
+import {
+  TASK_FILTER_STATUS_OPTIONS,
+  TASK_SORT_OPTIONS,
+  type TaskSort,
+  type TaskStatus,
+} from "@/features/tasks/task.types";
 
 type TaskFiltersProps = {
   status: TaskStatus | "all";
@@ -16,7 +22,12 @@ export function TaskFilters({
   onSortChange,
 }: TaskFiltersProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-lg border border-white/10 bg-slate-900/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cx(
+        ui.panelCompact,
+        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      )}
+    >
       <div>
         <h2 className="text-lg font-semibold text-white">Tasks</h2>
         <p className="text-sm text-slate-400">
@@ -25,31 +36,35 @@ export function TaskFilters({
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <label className="flex flex-col gap-1 text-sm text-slate-300">
+        <label className={ui.fieldLabelStacked}>
           Status
           <select
             value={status}
             onChange={(event) =>
               onStatusChange(event.target.value as TaskStatus | "all")
             }
-            className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-cyan-400/30 transition focus:ring-4"
+            className={ui.selectFilter}
           >
-            <option value="all">All</option>
-            <option value="todo">Todo</option>
-            <option value="in-progress">In progress</option>
-            <option value="done">Done</option>
+            {TASK_FILTER_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-sm text-slate-300">
+        <label className={ui.fieldLabelStacked}>
           Sort
           <select
             value={sort}
             onChange={(event) => onSortChange(event.target.value as TaskSort)}
-            className="rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white outline-none ring-cyan-400/30 transition focus:ring-4"
+            className={ui.selectFilter}
           >
-            <option value="createdAt">Newest first</option>
-            <option value="priority">Priority</option>
+            {TASK_SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>

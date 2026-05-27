@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { runDecompositionAgent } from "@/server/agents/decomposition-agent";
 import { badRequest, ok, routeError } from "@/server/http/api-response";
+import { readJsonBody } from "@/server/http/read-json";
 import { requireSameOrigin } from "@/server/http/request-guard";
 
 export const runtime = "nodejs";
@@ -10,14 +11,6 @@ export const runtime = "nodejs";
 const requestSchema = z.object({
   taskId: z.string().min(1),
 });
-
-async function readJson(request: NextRequest) {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
 
 export async function POST(request: NextRequest) {
   const originError = requireSameOrigin(request);
@@ -27,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await readJson(request);
+    const body = await readJsonBody(request);
 
     if (!body) {
       return badRequest("Invalid JSON body");

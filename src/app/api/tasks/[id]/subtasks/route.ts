@@ -13,6 +13,7 @@ import {
   notFound,
   routeError,
 } from "@/server/http/api-response";
+import { readJsonBody } from "@/server/http/read-json";
 import { requireSameOrigin } from "@/server/http/request-guard";
 
 export const runtime = "nodejs";
@@ -36,14 +37,6 @@ async function getTaskId(context: RouteContext) {
   return params.id;
 }
 
-async function readJson(request: NextRequest) {
-  try {
-    return await request.json();
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(request: NextRequest, context: RouteContext) {
   const originError = requireSameOrigin(request);
 
@@ -59,7 +52,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return notFound("Task not found");
     }
 
-    const body = await readJson(request);
+    const body = await readJsonBody(request);
 
     if (!body) {
       return badRequest("Invalid JSON body");

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { cx, ui } from "@/components/ui/styles";
 import {
   createGeneratedSubtasks,
   runDecomposition,
@@ -117,13 +118,8 @@ export function AiPlaceholderPanel({
   }
 
   return (
-    <section
-      id="ai-panel"
-      className="rounded-lg border border-cyan-300/20 bg-cyan-300/[0.06] p-5"
-    >
-      <p className="text-sm font-medium uppercase tracking-[0.22em] text-cyan-200">
-        AI Agent Layer
-      </p>
+    <section id="ai-panel" className={ui.aiPanel}>
+      <p className={ui.overline}>AI Agent Layer</p>
 
       <h2 className="mt-3 text-xl font-semibold text-white">
         Planning and decomposition
@@ -139,12 +135,12 @@ export function AiPlaceholderPanel({
           type="button"
           onClick={handlePlanDay}
           disabled={isPlanning}
-          className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+          className={ui.primaryButton}
         >
           {isPlanning ? "Planning..." : "Plan my day"}
         </button>
 
-        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
+        <div className={ui.panelNested}>
           <p className="text-sm font-medium text-white">Selected task</p>
           {selectedTask ? (
             <div className="mt-2">
@@ -152,7 +148,7 @@ export function AiPlaceholderPanel({
               <button
                 type="button"
                 onClick={handleClearSelection}
-                className="mt-2 text-xs text-slate-400 underline-offset-4 hover:text-white hover:underline"
+                className={ui.linkButton}
               >
                 Clear selection
               </button>
@@ -167,7 +163,7 @@ export function AiPlaceholderPanel({
             type="button"
             onClick={handleDecompose}
             disabled={!selectedTask || isDecomposing}
-            className="mt-4 w-full rounded-lg border border-cyan-300/20 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/10 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cx("mt-4", ui.accentButtonFull)}
           >
             {isDecomposing ? "Decomposing..." : "Decompose selected task"}
           </button>
@@ -175,13 +171,13 @@ export function AiPlaceholderPanel({
       </div>
 
       {errorMessage ? (
-        <div className="mt-4 rounded-lg border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-100">
+        <div className={cx("mt-4", ui.alertError)}>
           {errorMessage}
         </div>
       ) : null}
 
       {createdSubtasksSummary ? (
-        <div className="mt-4 rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
+        <div className={cx("mt-4", ui.alertSuccess)}>
           <p className="text-sm font-medium text-emerald-100">
             Subtasks created
           </p>
@@ -196,10 +192,8 @@ export function AiPlaceholderPanel({
 
       {prioritizationResult ? (
         <div className="mt-5 space-y-4">
-          <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
-            <p className="text-xs uppercase tracking-widest text-slate-500">
-              Day plan
-            </p>
+          <div className={ui.panelNested}>
+            <p className={ui.metaLabel}>Day plan</p>
             <p className="mt-2 text-sm leading-6 text-white">
               {prioritizationResult.summary}
             </p>
@@ -209,14 +203,9 @@ export function AiPlaceholderPanel({
             <div className="space-y-3">
               <p className="text-sm font-medium text-white">Recommended order</p>
               {prioritizationResult.recommendedTasks.map((task) => (
-                <div
-                  key={task.taskId}
-                  className="rounded-lg border border-white/10 bg-slate-950/70 p-4"
-                >
+                <div key={task.taskId} className={ui.panelNested}>
                   <div className="flex items-start gap-3">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-cyan-300 text-sm font-bold text-slate-950">
-                      {task.rank}
-                    </span>
+                    <span className={ui.rankBadge}>{task.rank}</span>
                     <div>
                       <p className="font-medium text-white">{task.title}</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -232,7 +221,7 @@ export function AiPlaceholderPanel({
             </div>
           ) : null}
 
-          <details className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
+          <details className={ui.panelNested}>
             <summary className="cursor-pointer text-sm font-medium text-slate-300">
               Prioritization agent steps
             </summary>
@@ -248,7 +237,7 @@ export function AiPlaceholderPanel({
       {decompositionResult ? (
         <div className="mt-5 space-y-4">
           {decompositionResult.type === "clarification_needed" ? (
-            <div className="rounded-lg border border-amber-300/20 bg-amber-300/10 p-4">
+            <div className={ui.alertWarning}>
               <p className="text-sm font-medium text-amber-100">
                 Clarification needed
               </p>
@@ -263,10 +252,8 @@ export function AiPlaceholderPanel({
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
-                <p className="text-xs uppercase tracking-widest text-slate-500">
-                  Decomposition
-                </p>
+              <div className={ui.panelNested}>
+                <p className={ui.metaLabel}>Decomposition</p>
                 <p className="mt-2 text-sm leading-6 text-white">
                   {decompositionResult.summary}
                 </p>
@@ -275,7 +262,7 @@ export function AiPlaceholderPanel({
               {decompositionResult.subtasks.map((subtask) => (
                 <div
                   key={`${subtask.title}-${subtask.priority}`}
-                  className="rounded-lg border border-white/10 bg-slate-950/70 p-4"
+                  className={ui.panelNested}
                 >
                   <p className="font-medium text-white">{subtask.title}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -292,14 +279,14 @@ export function AiPlaceholderPanel({
                 type="button"
                 onClick={handleCreateSubtasks}
                 disabled={isCreatingSubtasks}
-                className="w-full rounded-lg bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-50"
+                className={ui.primaryButton}
               >
                 {isCreatingSubtasks ? "Creating subtasks..." : "Create subtasks"}
               </button>
             </div>
           )}
 
-          <details className="rounded-lg border border-white/10 bg-slate-950/70 p-4">
+          <details className={ui.panelNested}>
             <summary className="cursor-pointer text-sm font-medium text-slate-300">
               Decomposition agent steps
             </summary>

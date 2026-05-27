@@ -1,5 +1,6 @@
 "use client";
 
+import { ui } from "@/components/ui/styles";
 import type { TaskDto, TaskStatus } from "@/features/tasks/task.types";
 import { TaskCard } from "./task-card";
 
@@ -26,7 +27,7 @@ export function TaskList({
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
-            className="h-48 animate-pulse rounded-lg border border-white/10 bg-white/[0.04]"
+            className={ui.skeleton}
           />
         ))}
       </div>
@@ -35,7 +36,7 @@ export function TaskList({
 
   if (tasks.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-white/15 bg-white/[0.03] p-10 text-center">
+      <div className={ui.emptyState}>
         <p className="text-lg font-semibold text-white">No tasks yet</p>
         <p className="mt-2 text-sm text-slate-400">
           Create the first task to start building your DevLog workflow.

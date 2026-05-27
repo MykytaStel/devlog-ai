@@ -60,6 +60,30 @@ describe("runDecompositionAgent", () => {
     expect(mockGetAiProvider).toHaveBeenCalledTimes(1);
   });
 
+  it("returns structured subtasks for clear tasks with short descriptions", async () => {
+    mockGetTaskById.mockResolvedValue(makeTaskWithSubtasks({
+      title: "Add dark mode toggle",
+      description: "User preference stored in localStorage",
+    }));
+
+    const result = await runDecompositionAgent({ taskId: "task-1" });
+    expect(result.type).toBe("subtasks");
+    expect(mockGetAiProvider).toHaveBeenCalledTimes(1);
+  });
+
+  it("asks for clarification for tasks with short titles and no description", async () => {
+    mockGetTaskById.mockResolvedValue(
+      makeTaskWithSubtasks({
+        title: "Fix bug",
+        description: "",
+      })
+    );
+
+    const result = await runDecompositionAgent({ taskId: "task-2" });
+    expect(result.type).toBe("clarification_needed");
+    expect(mockGetAiProvider).not.toHaveBeenCalled();
+  });
+
   it("throws when task is not found", async () => {
     mockGetTaskById.mockResolvedValue(null);
 
@@ -68,3 +92,4 @@ describe("runDecompositionAgent", () => {
     ).rejects.toThrow("Task not found");
   });
 });
+

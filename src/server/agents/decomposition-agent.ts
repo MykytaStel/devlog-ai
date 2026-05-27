@@ -30,13 +30,33 @@ function isTaskVague(task: {
   const normalizedTitle = title.toLowerCase();
   const normalizedDescription = description.toLowerCase();
 
-  const isTooShort = title.length < 8 || description.length < 40;
-  const hasVagueTitle = vaguePhrases.some((phrase) => normalizedTitle === phrase);
-  const hasVagueDescription =
-    normalizedDescription.length < 60 &&
-    vaguePhrases.some((phrase) => normalizedDescription.includes(phrase));
+  const isTitleExtremelyShort = title.length < 5;
+  const isDescriptionShort = description.length < 30;
 
-  return isTooShort || hasVagueTitle || hasVagueDescription;
+  // Extremely short title and short description -> vague
+  if (isTitleExtremelyShort && isDescriptionShort) {
+    return true;
+  }
+
+  // Vague title phrase and short description -> vague
+  const hasVagueTitle = vaguePhrases.some((phrase) => normalizedTitle === phrase);
+  if (hasVagueTitle && isDescriptionShort) {
+    return true;
+  }
+
+  // Short title (< 8 chars) and no description -> vague
+  if (title.length < 8 && description.length === 0) {
+    return true;
+  }
+
+  // Both title and description are general vague phrases
+  const isTitleVagueWord = vaguePhrases.includes(normalizedTitle);
+  const isDescriptionVagueWord = vaguePhrases.includes(normalizedDescription);
+  if (isTitleVagueWord && (description.length === 0 || isDescriptionVagueWord)) {
+    return true;
+  }
+
+  return false;
 }
 
 function buildClarificationResult(task: {

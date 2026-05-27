@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { cx, ui } from "@/components/ui/styles";
 import {
   TASK_PRIORITY_LABELS,
@@ -12,8 +13,8 @@ import {
 type TaskCardProps = {
   task: TaskDto;
   onEdit: (task: TaskDto) => void;
-  onDelete: (task: TaskDto) => void;
-  onStatusChange: (task: TaskDto, status: TaskStatus) => void;
+  onDelete: (task: TaskDto) => Promise<void>;
+  onStatusChange: (task: TaskDto, status: TaskStatus) => Promise<void>;
   onDecompose: (task: TaskDto) => void;
 };
 
@@ -33,6 +34,33 @@ export function TaskCard({
   onStatusChange,
   onDecompose,
 }: TaskCardProps) {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  async function handleDeleteClick() {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      await onDelete(task);
+    } finally {
+      setIsDeleting(false);
+      setConfirmDelete(false);
+    }
+  }
+
+  async function handleStatusChange(status: TaskStatus) {
+    setIsChangingStatus(true);
+    try {
+      await onStatusChange(task, status);
+    } finally {
+      setIsChangingStatus(false);
+    }
+  }
+
   return (
     <article className={ui.taskCard}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -78,13 +106,37 @@ export function TaskCard({
           >
             Edit
           </button>
-          <button
-            type="button"
-            onClick={() => onDelete(task)}
-            className={ui.dangerButton}
-          >
-            Delete
-          </button>
+
+          {confirmDelete ? (
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                disabled={isDeleting}
+                className={cx(
+                  ui.dangerButton,
+                  "font-bold disabled:opacity-50"
+                )}
+              >
+                {isDeleting ? "Deleting…" : "Confirm"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className={ui.secondaryButton}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDeleteClick}
+              className={ui.dangerButton}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -93,10 +145,14 @@ export function TaskCard({
           Quick status update
           <select
             value={task.status}
+            disabled={isChangingStatus}
             onChange={(event) =>
-              onStatusChange(task, event.target.value as TaskStatus)
+              handleStatusChange(event.target.value as TaskStatus)
             }
-            className={ui.selectCompact}
+            className={cx(
+              ui.selectCompact,
+              isChangingStatus && "opacity-50 cursor-wait"
+            )}
           >
             {TASK_STATUS_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>

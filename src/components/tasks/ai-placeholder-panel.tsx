@@ -7,9 +7,11 @@ import {
   createGeneratedSubtasks,
   runDecomposition,
   runPrioritization,
+  runStatusUpdate,
 } from "@/features/ai/ai.api";
 import type { DecompositionResult } from "@/features/ai/decomposition.types";
 import type { PrioritizationResult } from "@/features/ai/prioritization.types";
+import type { StatusUpdateResult } from "@/features/ai/status.types";
 import type { TaskDto } from "@/features/tasks/task.types";
 
 type AiPlaceholderPanelProps = {
@@ -33,8 +35,11 @@ export function AiPlaceholderPanel({
     useState<PrioritizationResult | null>(null);
   const [decompositionResult, setDecompositionResult] =
     useState<DecompositionResult | null>(null);
+  const [statusUpdateResult, setStatusUpdateResult] =
+    useState<StatusUpdateResult | null>(null);
   const [isPlanning, setIsPlanning] = useState(false);
   const [isDecomposing, setIsDecomposing] = useState(false);
+  const [isGeneratingStatus, setIsGeneratingStatus] = useState(false);
   const [isCreatingSubtasks, setIsCreatingSubtasks] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdSubtasksSummary, setCreatedSubtasksSummary] =
@@ -76,6 +81,23 @@ export function AiPlaceholderPanel({
       );
     } finally {
       setIsDecomposing(false);
+    }
+  }
+
+  async function handleGenerateStatus() {
+    setIsGeneratingStatus(true);
+    setErrorMessage(null);
+    setStatusUpdateResult(null);
+
+    try {
+      const nextResult = await runStatusUpdate();
+      setStatusUpdateResult(nextResult);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to generate status update"
+      );
+    } finally {
+      setIsGeneratingStatus(false);
     }
   }
 
@@ -138,6 +160,15 @@ export function AiPlaceholderPanel({
           className={ui.primaryButton}
         >
           {isPlanning ? "Planning..." : "Plan my day"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGenerateStatus}
+          disabled={isGeneratingStatus}
+          className={ui.secondaryButton}
+        >
+          {isGeneratingStatus ? "Generating..." : "Generate Standup Update"}
         </button>
 
         <div className={ui.panelNested}>
@@ -227,6 +258,35 @@ export function AiPlaceholderPanel({
             </summary>
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-400">
               {prioritizationResult.agentSteps.map((step) => (
+                <li key={step}>{step}</li>
+              ))}
+            </ol>
+          </details>
+        </div>
+      ) : null}
+
+      {statusUpdateResult ? (
+        <div className="mt-5 space-y-4">
+          <div className={ui.panelNested}>
+            <p className={ui.metaLabel}>Standup Update</p>
+            <div className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white rounded bg-black/20 p-4 border border-white/5">
+              {statusUpdateResult.updateText}
+            </div>
+            <button
+              type="button"
+              className={cx("mt-3", ui.accentButton)}
+              onClick={() => navigator.clipboard.writeText(statusUpdateResult.updateText)}
+            >
+              Copy to clipboard
+            </button>
+          </div>
+
+          <details className={ui.panelNested}>
+            <summary className="cursor-pointer text-sm font-medium text-slate-300">
+              Status update agent steps
+            </summary>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-400">
+              {statusUpdateResult.agentSteps.map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>

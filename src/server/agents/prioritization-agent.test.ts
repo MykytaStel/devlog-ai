@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { AiProvider } from "@/server/ai/ai-provider";
 import { getAiProvider } from "@/server/ai/get-ai-provider";
 import { getTasks } from "@/server/repositories/task.repository";
-import type { TaskDto } from "@/features/tasks/task.types";
+import { makeTask, makeMockProvider } from "./__fixtures__/agent.fixtures";
 
 import { runPrioritizationAgent } from "./prioritization-agent";
 
@@ -18,55 +17,28 @@ vi.mock("@/server/ai/get-ai-provider", () => ({
 const mockGetTasks = vi.mocked(getTasks);
 const mockGetAiProvider = vi.mocked(getAiProvider);
 
-function task(overrides: Partial<TaskDto>): TaskDto {
-  return {
-    id: "task-1",
-    title: "Build task tracker",
-    description:
-      "Create a local task tracker with validation, persistence, and a focused UI.",
-    status: "todo",
-    priority: "medium",
-    parentId: null,
-    createdAt: "2026-05-01T00:00:00.000Z",
-    updatedAt: "2026-05-01T00:00:00.000Z",
-    ...overrides,
-  };
-}
-
-function mockProvider(): AiProvider {
-  return {
-    id: "mock",
-    health: () => ({
-      provider: "mock",
-      configured: true,
-      model: "mock",
-    }),
-    generateJson: vi.fn(async (input) => input.mockResponse),
-  };
-}
-
 describe("runPrioritizationAgent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAiProvider.mockReturnValue(mockProvider());
+    mockGetAiProvider.mockReturnValue(makeMockProvider());
   });
 
   it("excludes done tasks and flags vague actionable work", async () => {
     mockGetTasks.mockResolvedValue([
-      task({
+      makeTask({
         id: "done-task",
         title: "Already shipped",
         status: "done",
         priority: "high",
       }),
-      task({
+      makeTask({
         id: "vague-task",
         title: "Fix",
         description: "fix bug",
         status: "todo",
         priority: "low",
       }),
-      task({
+      makeTask({
         id: "active-task",
         title: "Complete decomposition flow",
         status: "in-progress",
@@ -86,5 +58,28 @@ describe("runPrioritizationAgent", () => {
         '"Fix" may need a clearer description before execution.',
       ])
     );
+  });
+
+  it("returns empty plan when there are no tasks", async () => {
+    mockGetTasks.mockResolvedValue([]);
+
+    const result = await runPrioritizationAgent();
+
+    expect(result.recommendedTasks).toHaveLength(0);
+    expect(result.contextStats.totalTasks).toBe(0);
+    expect(mockGetAiProvider).not.toHaveBeenCalled();
+  });
+
+  it("returns all-done plan when every task is done", async () => {
+    mockGetTasks.mockResolvedValue([
+      makeTask({ id: "d1", status: "done", priority: "high" }),
+      makeTask({ id: "d2", status: "done", priority: "medium" }),
+    ]);
+
+    const result = await runPrioritizationAgent();
+
+    expect(result.recommendedTasks).toHaveLength(0);
+    expect(result.contextStats.doneTasks).toBe(2);
+    expect(mockGetAiProvider).not.toHaveBeenCalled();
   });
 });

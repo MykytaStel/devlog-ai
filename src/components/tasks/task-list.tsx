@@ -8,8 +8,8 @@ type TaskListProps = {
   tasks: TaskDto[];
   isLoading: boolean;
   onEdit: (task: TaskDto) => void;
-  onDelete: (task: TaskDto) => void;
-  onStatusChange: (task: TaskDto, status: TaskStatus) => void;
+  onDelete: (task: TaskDto) => Promise<void>;
+  onStatusChange: (task: TaskDto, status: TaskStatus) => Promise<void>;
   onDecompose: (task: TaskDto) => void;
 };
 

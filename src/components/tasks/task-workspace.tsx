@@ -1,160 +1,39 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ui } from "@/components/ui/styles";
-import {
-  createTask,
-  deleteTask,
-  fetchTasks,
-  updateTask,
-  type TaskListFilters,
-  type TaskMutationInput,
-} from "@/features/tasks/task.api";
-import type { TaskDto, TaskStatus } from "@/features/tasks/task.types";
-import { AiPlaceholderPanel } from "./ai-placeholder-panel";
+import type { TaskDto } from "@/features/tasks/task.types";
+import { AiPanel } from "./ai-panel";
+import { useTaskList } from "./hooks/use-task-list";
 import { TaskFilters } from "./task-filters";
 import { TaskForm } from "./task-form";
 import { TaskList } from "./task-list";
 
 export function TaskWorkspace() {
-  const [tasks, setTasks] = useState<TaskDto[]>([]);
-  const [filters, setFilters] = useState<TaskListFilters>({
-    status: "all",
-    sort: "createdAt",
-  });
   const [editingTask, setEditingTask] = useState<TaskDto | null>(null);
-  const [selectedTaskForAi, setSelectedTaskForAi] = useState<TaskDto | null>(
-    null
-  );
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [selectedTaskForAi, setSelectedTaskForAi] = useState<TaskDto | null>(null);
 
-  const loadTasks = useCallback(async () => {
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const nextTasks = await fetchTasks(filters);
-      setTasks(nextTasks);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to load tasks"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [filters]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    fetchTasks(filters)
-      .then((nextTasks) => {
-        if (!isActive) {
-          return;
-        }
-
-        setTasks(nextTasks);
-        setErrorMessage(null);
-      })
-      .catch((error) => {
-        if (!isActive) {
-          return;
-        }
-
-        setErrorMessage(
-          error instanceof Error ? error.message : "Failed to load tasks"
-        );
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [filters]);
-
-  async function handleSubmit(input: TaskMutationInput) {
-    setIsSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      if (editingTask) {
-        await updateTask(editingTask.id, input);
-        setEditingTask(null);
-      } else {
-        await createTask(input);
-      }
-
-      await loadTasks();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to save task"
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function handleDelete(task: TaskDto) {
-    const confirmed = window.confirm(`Delete "${task.title}"?`);
-
-    if (!confirmed) {
-      return;
-    }
-
-    setErrorMessage(null);
-
-    try {
-      await deleteTask(task.id);
-
-      if (editingTask?.id === task.id) {
-        setEditingTask(null);
-      }
-
-      if (selectedTaskForAi?.id === task.id) {
-        setSelectedTaskForAi(null);
-      }
-
-      await loadTasks();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to delete task"
-      );
-    }
-  }
-
-  async function handleStatusChange(task: TaskDto, status: TaskStatus) {
-    setErrorMessage(null);
-
-    try {
-      await updateTask(task.id, { status });
-      await loadTasks();
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to update task"
-      );
-    }
-  }
+  const {
+    tasks,
+    filters,
+    isLoading,
+    isSubmitting,
+    errorMessage,
+    setFilters,
+    loadTasks,
+    handleSubmit,
+    handleDelete,
+    handleStatusChange,
+  } = useTaskList();
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
       <nav className="grid grid-cols-2 gap-3 lg:hidden">
-        <a
-          href="#task-form"
-          className={ui.mobilePrimaryNav}
-        >
+        <a href="#task-form" className={ui.mobilePrimaryNav}>
           New task
         </a>
-        <a
-          href="#ai-panel"
-          className={ui.mobileSecondaryNav}
-        >
+        <a href="#ai-panel" className={ui.mobileSecondaryNav}>
           AI panel
         </a>
       </nav>
@@ -164,46 +43,47 @@ export function TaskWorkspace() {
           status={filters.status}
           sort={filters.sort}
           onStatusChange={(status) => {
-            setIsLoading(true);
-            setFilters((current) => ({
-              ...current,
-              status,
-            }));
+            setFilters((current) => ({ ...current, status }));
           }}
           onSortChange={(sort) => {
-            setIsLoading(true);
-            setFilters((current) => ({
-              ...current,
-              sort,
-            }));
+            setFilters((current) => ({ ...current, sort }));
           }}
         />
 
         {errorMessage ? (
-          <div className={ui.alertError}>
-            {errorMessage}
-          </div>
+          <div className={ui.alertError}>{errorMessage}</div>
         ) : null}
 
         <TaskList
           tasks={tasks}
           isLoading={isLoading}
           onEdit={setEditingTask}
-          onDelete={handleDelete}
+          onDelete={(task) =>
+            handleDelete(
+              task,
+              editingTask,
+              selectedTaskForAi,
+              () => setEditingTask(null),
+              () => setSelectedTaskForAi(null)
+            )
+          }
           onStatusChange={handleStatusChange}
           onDecompose={setSelectedTaskForAi}
         />
       </section>
 
-      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overflow-x-hidden custom-scrollbar lg:pb-6">
         <TaskForm
           editingTask={editingTask}
           isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
+          onSubmit={async (input) => {
+            await handleSubmit(input, editingTask);
+            if (editingTask) setEditingTask(null);
+          }}
           onCancelEdit={() => setEditingTask(null)}
         />
 
-        <AiPlaceholderPanel
+        <AiPanel
           key={selectedTaskForAi?.id ?? "no-task-selected"}
           selectedTask={selectedTaskForAi}
           onClearSelectedTask={() => setSelectedTaskForAi(null)}

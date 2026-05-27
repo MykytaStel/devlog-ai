@@ -1,261 +1,69 @@
-# AGENT_LOG.md
-
-## Project
-
-DevLog — a small engineering task tracker with an AI agent layer.
-
-## Assignment focus
-
-The assignment asks for a basic task tracker with AI-assisted workflows.
-The important part is not only CRUD, but also showing how I use coding agents during development and how AI features are integrated into the product.
-
-## Tools used
-
-- ChatGPT / Codex — planning, architecture discussion, code review, implementation guidance, and implementation support.
-- Manual development — final decisions, code integration, testing, and trade-off decisions.
-
-## Where I intervened manually
-
-- I chose the local-first scope and kept authentication/deployment out of scope because the assignment describes one user and one team.
-- I reviewed and adjusted generated code when it conflicted with Next.js 16, Prisma 7, lint rules, or the assignment constraints.
-- I kept mocked AI as the default so reviewers can run the project without real API keys.
-- I tested the final app manually and with browser smoke tests instead of trusting generated code blindly.
-
-## Implementation process
-
-### Slice 1 — Project foundation
-
-I used the agent to plan the architecture and scaffold the initial structure:
-
-- Next.js App Router
-- Prisma
-- SQLite
-- repository layer
-- task validation with Zod
-- environment setup
-
-I manually decided to keep the architecture small and local-first because the assignment does not require authentication, deployment, or multi-user functionality.
-
-## Storage decision
-
-SQLite is used because this is a local single-user test project.
-
-Limitations:
-
-- no multi-user collaboration
-- no distributed storage
-- no production-grade scaling
-- local file-based database only
-
-This is acceptable for the assignment scope and keeps the project easy to run locally.
-
-## Planned sequence
-
-- Task CRUD API
-- Task UI
-- AI provider abstraction
-- Prioritization agent
-- Decomposition agent
-
-## Slice 2 — Task CRUD API
-
-I used the agent to help structure the API routes and validation flow.
-
-Implemented:
-
-- `GET /api/tasks`
-- `POST /api/tasks`
-- `GET /api/tasks/:id`
-- `PATCH /api/tasks/:id`
-- `DELETE /api/tasks/:id`
-
-The implementation follows a small layered architecture:
-
-- API routes handle HTTP concerns.
-- Zod schemas validate input.
-- Repository layer owns database access.
-- Shared response helpers keep route handlers small.
-
-Manual decisions:
-
-- I kept filtering and sorting server-side because the assignment expects a real tracker, not only client-side state.
-- I added structured validation errors for easier debugging.
-- I avoided authentication because the assignment explicitly describes one user and one team.
-
-## Fix — Prisma 7 SQLite adapter
-
-During CRUD API testing, the `/api/tasks` endpoint returned a 500 error.
-
-Root cause:
-
-- Prisma 7 requires a driver adapter when creating `PrismaClient`.
-- The initial implementation used `new PrismaClient()` without an adapter.
-- Since the project uses SQLite, I added `@prisma/adapter-better-sqlite3`.
-
-Manual decision:
-
-- I kept SQLite because it matches the local-first scope of the assignment.
-- I avoided switching to Postgres because that would add unnecessary setup friction for reviewers.
-- The app remains runnable locally with `npm install && npm run dev`.
-
-## Slice 3 — Task CRUD UI
-
-I used the agent to scaffold the first version of the UI because the assignment explicitly expects the frontend to be scaffolded with help from a coding agent.
-
-Implemented:
-
-- task list
-- task creation form
-- task editing flow
-- task deletion flow
-- quick status update
-- status filter
-- sorting by creation date or priority
-- loading state
-- empty state
-- basic error state
-- AI placeholder panel for upcoming agent features
-
-Manual decisions:
-
-- I kept the UI as a single-page local dashboard because the assignment does not require authentication or multiple workspaces.
-- I added a right-side panel for the task form and future AI actions to keep the workflow compact.
-- I kept the AI panel visible but inactive in this slice to show where the prioritization and decomposition agents will be integrated next.
-- I avoided drag-and-drop because it is not required and would increase scope.
-
-## Slice 4 — AI Provider Layer
-
-Implemented the AI provider abstraction before building concrete agents.
-
-Implemented:
-
-- `AiProvider` interface
-- `MockAiProvider`
-- `OpenAiProvider`
-- provider resolver based on `AI_PROVIDER`
-- `/api/ai/health` endpoint
-- temporary AI route stubs with provider health info
-
-Why this matters:
-
-- The assignment allows mocked LLM calls if documented.
-- The app can run locally without real API keys.
-- Future agents do not depend directly on OpenAI SDK.
-- Reviewers can set `AI_PROVIDER=openai` and provide `OPENAI_API_KEY` to test real AI behavior.
-
-Manual decisions:
-
-- Mock mode is the default to keep `npm install && npm run dev` friction-free.
-- OpenAI is isolated behind an interface.
-- Agent routes were temporary `501 Not Implemented` stubs until the actual prioritization and decomposition slices were implemented.
-
-## Slice 5 — Prioritization Agent
-
-Implemented the first in-product AI agent required by the assignment.
-
-Feature:
-
-- `POST /api/ai/prioritize`
-- "Plan my day" action in the UI
-
-Agent workflow:
-
-1. Load all tasks from the repository.
-2. Calculate local task signals:
-   - priority
-   - status
-   - age
-   - description clarity
-3. Exclude completed work from the main recommendation set.
-4. Build a shortlist of actionable tasks.
-5. Send structured context to the AI provider.
-6. Validate the provider response with Zod.
-7. Return a human-readable day plan with reasoning and risks.
-
-Why this is agentic:
-
-This is not a single prompt directly attached to a button.
-The agent first gathers context, evaluates task metadata, calculates local decision signals, builds a shortlist, and only then asks the provider to turn the context into a practical recommendation.
-
-Manual decisions:
-
-- I kept deterministic local scoring before the LLM call so the feature remains useful in mock mode.
-- I kept the mock provider as the default so reviewers can run the app without API keys.
-- I exposed agent steps in the UI to make the behavior explainable.
-- I filtered invalid task IDs from provider output to avoid showing hallucinated tasks.
-
-## Slice 6 — Decomposition Agent
-
-Implemented the second required in-product AI agent.
-
-Feature:
-
-- `POST /api/ai/decompose`
-- "Break down" action on task cards
-- selected task context in the AI panel
-- subtask preview
-- "Create subtasks" action that saves generated subtasks into the app
-
-Agent workflow:
-
-1. Load the selected task from the repository.
-2. Check whether the task is clear enough.
-3. If the task is vague, return a clarification question.
-4. If the task is clear, build structured context for the AI provider.
-5. Generate a structured subtask plan.
-6. Validate the result with Zod.
-7. Show a preview in the UI.
-8. Create subtasks only after explicit user confirmation.
-
-Why this is agentic:
-
-The feature is not a direct one-shot LLM prompt.
-The agent makes a decision before generation: clarify or decompose.
-It also separates AI generation from database writes, so the user remains in control.
-
-Manual decisions:
-
-- I intentionally did not auto-create subtasks immediately after AI generation.
-- I added a clarification branch to avoid hallucinated subtasks for vague tasks.
-- I reused the existing Task model through `parentId` instead of adding a separate Subtask table.
-- I kept the mock provider compatible with this flow so the app works without real API keys.
-- I removed unused scaffolding where it distracted from the assignment scope.
-
-## Slice 7 — Audit and Submission Hardening
-
-I asked Codex to review the project against the assignment and then implement the highest-priority fixes.
-
-What changed:
-
-- Fixed build-blocking TypeScript issues by validating Prisma task fields at the repository boundary.
-- Fixed React lint issues without disabling the rule globally.
-- Added `.env.example` back into version control while keeping real `.env` files ignored.
-- Added route-level same-origin checks for mutating and AI endpoints.
-- Added basic security headers in Next.js config.
-- Added SQLite indexes for common task queries.
-- Tightened the README around setup, architecture, trade-offs, security, and graceful shutdown.
-- Reduced overly decorative UI styling and improved mobile access to create/AI actions.
-
-Manual decisions:
-
-- I kept authentication out of scope because the assignment explicitly says it is not required.
-- I did not apply `npm audit fix --force` because it proposes breaking dependency changes.
-- I documented graceful shutdown instead of adding custom signal handlers, because this app uses the standard Next.js runtime.
-
-## Slice 8 — Final Submission Hardening
-
-I used Codex to compare the implementation against the homework brief one more time and then make the smallest high-impact fixes before submission.
-
-Implemented:
-
-- Fixed `PATCH` validation so partial updates no longer inherit create defaults and accidentally reset omitted fields.
-- Strengthened the OpenAI provider by using SDK-level Zod structured output parsing instead of loose JSON mode.
-- Mapped missing OpenAI keys to a client-facing `400` and provider/schema failures to `502`.
-- Removed the unfinished status-update endpoint from the public API instead of leaving a `501` route in the submission.
-- Improved the decomposition UI so creating subtasks leaves a visible success state and keeps the parent task context selected.
-- Added Vitest coverage for validation and the two agent decision paths.
-
-Manual decisions:
-
-- I did not add a third AI feature because the assignment asks for at least two, and two finished agents are stronger than two finished agents plus one placeholder.
-- I kept the existing `Task.parentId` subtask model because it is enough for the local MVP and avoids an unnecessary migration.
+# 🤖 AI Agent Integration & Development Log
+
+This document details how coding agents (ChatGPT, Codex, Gemini/Antigravity) were used to build **DevLog**, where they excelled, where they failed, and how manual engineering decisions shaped the final product.
+
+---
+
+## 📊 Quick Summary & Division of Labor
+
+We split the workload based on strengths: agents were used to generate boilerplate, scaffold CSS/layout configurations, and write initial tests. Manual intervention was focused on architecture boundaries, fixing Next.js/Prisma integration issues, and defining agentic logic.
+
+| Component / Layer | AI Agent Role | Human Developer Role |
+| :--- | :--- | :--- |
+| **Architecture & Database** | Proposed initial layout | Decided on local-first SQLite, configured repository layers |
+| **API Endpoints** | Scaffolded CRUD routes & Zod validation | Fixed Prisma 7 SQLite driver adapters & partial-update bugs |
+| **Frontend UI** | Scaffolded CSS tokens & Glassmorphic layout | Created custom scrollbars, added inline delete flow & loading states |
+| **AI Integration** | Wrote provider interfaces & schema structures | Designed actual step-by-step agentic workflows & local signals |
+| **Testing** | Generated basic unit test files | Extracted shared fixtures, added edge-case testing & coverage |
+
+---
+
+## 🛠️ Which Agents Were Used?
+- **ChatGPT / Codex / Gemini (Antigravity)**: Used for architecture consultation, boilerplate generation, CSS styling generation, lint fixing, and writing initial test suites.
+- **Manual Intervention**: Used for final system design, debugging compiler and runtime errors, integrating states, and writing mock/fallback flows.
+
+---
+
+## 🧭 Step-by-Step Implementation Slices
+
+### 🏗️ Slice 1 & 2: Project Foundation & Task CRUD API
+* **Agent Contribution**: Scaffolded initial folder structures, Next.js App Router API stubs, and Zod validator objects.
+* **Where the Agent Failed / Manual Intervention**: 
+  - **Prisma 7 SQLite Adapter Issue**: The agent-generated Prisma code failed with `500` errors on `/api/tasks`. Prisma 7 requires explicit driver adapters for SQLite. I manually integrated `@prisma/adapter-better-sqlite3`.
+  - **Database Scope**: I rejected agent suggestions for PostgreSQL/Auth systems, choosing SQLite to keep the reviewer setup as easy as running `npm install && npm run dev`.
+
+### 🎨 Slice 3: Task CRUD UI
+* **Agent Contribution**: Created the first-draft layout of the dashboard, inputs, buttons, and state hooks.
+* **Where the Agent Failed / Manual Intervention**:
+  - The generated UI was very plain and used standard inputs. I iterated with the agent to create a premium **Glassmorphism** layout.
+  - I manually built the per-card interactive delete confirmation state to replace standard browser `window.confirm()` calls, matching the dashboard's design.
+
+### 🔌 Slice 4: AI Provider Abstraction
+* **Agent Contribution**: Scaffolded the OpenAI mock framework.
+* **Where the Agent Failed / Manual Intervention**:
+  - I manually designed the `AiProvider` interface to separate LLM logic from our business logic, ensuring reviewers can fully run and test the app with a mock provider without needing real API keys.
+
+### 🧠 Slices 5, 6, & 8: The Agentic Workflows (Prioritization, Decomposition, & Refiner)
+*We didn't want this to be just simple text prompt wrappers. We designed actual multi-stage agent pipelines:*
+
+1. **Prioritization Agent ("Plan my day")**:
+   - **Agent Logic**: Calculates local task signals (priority, age, completion status, description clarity) *before* sending context to the LLM. 
+   - **Human Fix**: I filtered hallucinated tasks generated by the LLM by validating task IDs back against the local database.
+2. **Decomposition Agent ("Break down task")**:
+   - **Agent Logic**: Inspects the parent task first. If the prompt description is too vague, it yields a clarification question instead of hallucinating subtasks.
+   - **Human Fix**: I hooked the generated subtasks preview to the DB using `Task.parentId` to avoid adding heavy new database tables.
+3. **Task Refiner Agent ("✨ Refine Task")**:
+   - **Agent Logic**: Rewrites messy draft tickets into structured specs (Title, Problem, Solution, Acceptance Criteria).
+
+### 🐛 Slice 9: Code Review, Fixes, & Hardening
+* **Agent Contribution**: Suggested unit test templates and mocked API responses.
+* **Where the Agent Failed / Manual Intervention**:
+  - **Prompt Escape Bug**: The agent joined system prompts using `.join("\\n")`, which sent literal `\n` characters to OpenAI. I corrected this to use actual newline formatting.
+  - **Duplicate Fetch Bug**: The agent added duplicate data fetches on first render (both in a `useEffect` and on mount). I cleaned it up to save network round-trips.
+  - **Unit Testing**: I extracted fixtures into a shared fixture module `agent.fixtures.ts` and added edge cases (e.g., prioritization on empty lists) to bring the suite to 16 robust tests.
+
+---
+
+## 💡 Key Takeaways
+- **AI is great at scaffolding**: It speeds up drafting Tailwind/CSS configurations, React hooks, and boilerplate CRUD functions.
+- **AI requires strict boundaries**: Leaving agents to write database interactions often leads to schema mismatch bugs. Manual validation via Zod and manual testing of partial updates (`PATCH` API) was critical to making the application robust.
